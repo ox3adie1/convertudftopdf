@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UDF to PDF Converter - UYAP Dosyalarını PDF'e Dönüştür | convertudftopdf.com</title>
+    <meta name="description" content="UYAP .udf dosyalarını anında .pdf formatına dönüştürün. Ücretsiz, hızlı ve güvenli. Dosyalarınız sunucuya yüklenmez, tamamen tarayıcınızda işlenir.">
+    <meta name="keywords" content="udf to pdf, udf pdf dönüştürücü, uyap pdf, uyap döküman editörü, udf dosya açma, convert udf to pdf">
+    <meta property="og:title" content="UDF to PDF Converter - UYAP Dosyalarını PDF'e Dönüştür">
+    <meta property="og:description" content="UYAP .udf dosyalarını anında .pdf formatına dönüştürün. Ücretsiz, hızlı ve güvenli.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://convertudftopdf.com">
+    <link rel="canonical" href="https://convertudftopdf.com">
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <a href="/" class="logo">
+                <svg class="logo-icon" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect width="32" height="32" rx="8" fill="#2563eb"/>
+                    <path d="M8 10h6v12H8V10zm10 0h6v12h-6V10z" fill="#fff" opacity="0.3"/>
+                    <path d="M13 16l6-4v8l-6-4z" fill="#fff"/>
+                </svg>
+                <span>convertudftopdf<small>.com</small></span>
+            </a>
+            <nav class="nav">
+                <a href="#converter">Dönüştür</a>
+                <a href="#how-it-works">Nasıl Çalışır</a>
+                <a href="#faq">SSS</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Hero -->
+    <section class="hero">
+        <div class="container">
+            <h1>UYAP <span class="highlight">.udf</span> Dosyalarını<br><span class="highlight">.pdf</span>'e Dönüştürün</h1>
+            <p class="hero-subtitle">UYAP Döküman Editörü dosyalarınızı saniyeler içinde PDF formatına çevirin.<br>Tamamen ücretsiz, güvenli ve tarayıcınızda çalışır.</p>
+        </div>
+    </section>
+
+    <!-- Converter -->
+    <section id="converter" class="converter-section">
+        <div class="container">
+            <div class="converter-card">
+                <div id="dropZone" class="drop-zone">
+                    <div class="drop-zone-content">
+                        <svg class="upload-icon" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <rect x="8" y="16" width="48" height="40" rx="4" stroke="currentColor" stroke-width="2.5" fill="none"/>
+                            <path d="M24 8h16v8H24V8z" stroke="currentColor" stroke-width="2.5" rx="2" fill="none"/>
+                            <path d="M32 28v16M26 34l6-6 6 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <h3>.udf dosyanızı sürükleyin veya seçin</h3>
+                        <p>Birden fazla dosya seçebilirsiniz</p>
+                        <button id="selectBtn" class="btn btn-primary">Dosya Seç</button>
+                        <input type="file" id="fileInput" accept=".udf" multiple hidden>
+                    </div>
+                </div>
+
+                <!-- File List -->
+                <div id="fileList" class="file-list" hidden>
+                    <div class="file-list-header">
+                        <h3>Dosyalar</h3>
+                        <button id="clearAllBtn" class="btn btn-ghost">Temizle</button>
+                    </div>
+                    <div id="fileItems" class="file-items"></div>
+                    <div class="file-list-actions">
+                        <button id="convertAllBtn" class="btn btn-primary btn-lg">
+                            <svg viewBox="0 0 20 20" fill="currentColor" width="20" height="20">
+                                <path d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"/>
+                            </svg>
+                            Tümünü Dönüştür
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Progress -->
+                <div id="progressArea" class="progress-area" hidden>
+                    <div class="progress-bar-container">
+                        <div id="progressBar" class="progress-bar"></div>
+                    </div>
+                    <p id="progressText" class="progress-text">Dönüştürülüyor...</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works -->
+    <section id="how-it-works" class="how-section">
+        <div class="container">
+            <h2>Nasıl Çalışır?</h2>
+            <div class="steps">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <h3>Dosya Yükleyin</h3>
+                    <p>UYAP Döküman Editörü'nden kaydettiğiniz .udf dosyalarını sürükleyin veya seçin.</p>
+                </div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <h3>Dönüştürün</h3>
+                    <p>"Tümünü Dönüştür" butonuna tıklayın. Dönüşüm tamamen tarayıcınızda gerçekleşir.</p>
+                </div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <h3>İndirin</h3>
+                    <p>PDF dosyalarınız otomatik olarak indirilir. Birden fazla dosya varsa ZIP olarak alabilirsiniz.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features -->
+    <section class="features-section">
+        <div class="container">
+            <div class="features-grid">
+                <div class="feature">
+                    <div class="feature-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                        </svg>
+                    </div>
+                    <h3>%100 Güvenli</h3>
+                    <p>Dosyalarınız hiçbir sunucuya yüklenmez. Tüm işlem tarayıcınızda gerçekleşir.</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
+                        </svg>
+                    </div>
+                    <h3>Anında Dönüşüm</h3>
+                    <p>Dosyalarınız saniyeler içinde PDF'e dönüştürülür. İnternet bağlantısı gerekmez.</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+                        </svg>
+                    </div>
+                    <h3>Ücretsiz</h3>
+                    <p>Sınırsız dönüştürme. Kayıt gerektirmez, reklam içermez.</p>
+                </div>
+                <div class="feature">
+                    <div class="feature-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/>
+                        </svg>
+                    </div>
+                    <h3>Her Cihazda Çalışır</h3>
+                    <p>Bilgisayar, tablet veya telefon — modern bir tarayıcı yeterli.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ -->
+    <section id="faq" class="faq-section">
+        <div class="container">
+            <h2>Sıkça Sorulan Sorular</h2>
+            <div class="faq-list">
+                <details class="faq-item">
+                    <summary>.udf dosyası nedir?</summary>
+                    <p>UDF (UYAP Document Format), Türkiye'deki UYAP (Ulusal Yargı Ağı Platformu) sisteminde kullanılan özel bir döküman formatıdır. UYAP Döküman Editörü ile oluşturulan belgeler bu formatta kaydedilir. Avukatlar, hakimler ve savcılar tarafından yaygın olarak kullanılır.</p>
+                </details>
+                <details class="faq-item">
+                    <summary>Dosyalarım güvende mi?</summary>
+                    <p>Evet, tamamen güvende. Dosyalarınız hiçbir sunucuya gönderilmez. Tüm dönüştürme işlemi tarayıcınızda (bilgisayarınızda) gerçekleşir. Sayfayı kapattığınızda hiçbir veri kalmaz.</p>
+                </details>
+                <details class="faq-item">
+                    <summary>Hangi tarayıcıları destekliyorsunuz?</summary>
+                    <p>Google Chrome, Mozilla Firefox, Microsoft Edge ve Safari'nin güncel sürümlerinde sorunsuz çalışır.</p>
+                </details>
+                <details class="faq-item">
+                    <summary>Dönüştürme ücretsiz mi?</summary>
+                    <p>Evet, tamamen ücretsiz. Herhangi bir kayıt veya ödeme gerekmez. Sınırsız dosya dönüştürebilirsiniz.</p>
+                </details>
+                <details class="faq-item">
+                    <summary>Birden fazla dosyayı aynı anda dönüştürebilir miyim?</summary>
+                    <p>Evet, birden fazla .udf dosyasını aynı anda seçebilir veya sürükleyerek yükleyebilirsiniz. Tüm dosyalar sırayla dönüştürülür.</p>
+                </details>
+                <details class="faq-item">
+                    <summary>PDF çıktısında biçimlendirme korunuyor mu?</summary>
+                    <p>Evet, orijinal UDF dosyasındaki kalın yazı, altı çizili, italik, yazı tipi boyutu, hizalama gibi biçimlendirmeler PDF'e aktarılır.</p>
+                </details>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <a href="/" class="logo">
+                        <svg class="logo-icon" viewBox="0 0 32 32" fill="none">
+                            <rect width="32" height="32" rx="8" fill="#2563eb"/>
+                            <path d="M8 10h6v12H8V10zm10 0h6v12h-6V10z" fill="#fff" opacity="0.3"/>
+                            <path d="M13 16l6-4v8l-6-4z" fill="#fff"/>
+                        </svg>
+                        <span>convertudftopdf<small>.com</small></span>
+                    </a>
+                    <p>UYAP .udf dosyalarını hızlı ve güvenli bir şekilde PDF'e dönüştürün.</p>
+                </div>
+                <div class="footer-links">
+                    <h4>Bağlantılar</h4>
+                    <a href="#converter">Dönüştürücü</a>
+                    <a href="#how-it-works">Nasıl Çalışır</a>
+                    <a href="#faq">SSS</a>
+                    <a href="privacy.html">Gizlilik Politikası</a>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 convertudftopdf.com — Tüm hakları saklıdır.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="converter.js"></script>
+</body>
+</html>
