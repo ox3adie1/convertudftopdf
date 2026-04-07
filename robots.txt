@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /fonts/
+
+Sitemap: https://convertudftopdf.com/sitemap.xml
+Sitemap: https://udfkit.com/sitemap.xml

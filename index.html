@@ -20,12 +20,105 @@
     <meta name="twitter:image" content="https://convertudftopdf.com/og-image.png">
     <link rel="canonical" href="https://convertudftopdf.com">
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="apple-touch-icon" href="favicon.svg">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2563eb">
+    <meta name="robots" content="index, follow">
+    <meta name="google-site-verification" content="DQXlhI8zcKV054poHs1OgD5TbN-FSfMkcjTzW4NOLMI">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
+    <link rel="dns-prefetch" href="https://pagead2.googlesyndication.com">
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" as="style">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <meta name="google-adsense-account" content="ca-pub-4410660717929931">
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4410660717929931" crossorigin="anonymous"></script>
     <link rel="stylesheet" href="style.css">
+
+    <!-- JSON-LD Structured Data -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "UDF to PDF Converter",
+        "url": "https://convertudftopdf.com",
+        "description": "UYAP .udf dosyalarını anında PDF'e dönüştürün. Ücretsiz, hızlı ve güvenli.",
+        "applicationCategory": "UtilitiesApplication",
+        "operatingSystem": "Web Browser",
+        "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "TRY"
+        },
+        "browserRequirements": "Chrome, Firefox, Edge, Safari"
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+            {
+                "@type": "Question",
+                "name": ".udf dosyası nedir?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "UDF (UYAP Document Format), Türkiye'deki UYAP (Ulusal Yargı Ağı Platformu) sisteminde kullanılan özel bir döküman formatıdır. UYAP Döküman Editörü ile oluşturulan belgeler bu formatta kaydedilir. Avukatlar, hakimler ve savcılar tarafından yaygın olarak kullanılır."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "Dosyalarım güvende mi?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Evet, tamamen güvende. Dosyalarınız hiçbir sunucuya gönderilmez. Tüm dönüştürme işlemi tarayıcınızda (bilgisayarınızda) gerçekleşir. Sayfayı kapattığınızda hiçbir veri kalmaz."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "Hangi tarayıcıları destekliyorsunuz?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Google Chrome, Mozilla Firefox, Microsoft Edge ve Safari'nin güncel sürümlerinde sorunsuz çalışır."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "Dönüştürme ücretsiz mi?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Evet, tamamen ücretsiz. Herhangi bir kayıt veya ödeme gerekmez. Sınırsız dosya dönüştürebilirsiniz."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "Birden fazla dosyayı aynı anda dönüştürebilir miyim?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Evet, birden fazla .udf dosyasını aynı anda seçebilir veya sürükleyerek yükleyebilirsiniz. Tüm dosyalar sırayla dönüştürülür."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "PDF çıktısında biçimlendirme korunuyor mu?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Evet, orijinal UDF dosyasındaki kalın yazı, altı çizili, italik, yazı tipi boyutu, hizalama gibi biçimlendirmeler PDF'e aktarılır."
+                }
+            }
+        ]
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "convertudftopdf.com",
+        "url": "https://convertudftopdf.com",
+        "logo": "https://convertudftopdf.com/favicon.svg",
+        "sameAs": ["https://x.com/plajterligi"]
+    }
+    </script>
 </head>
 <body>
     <!-- Header -->
@@ -139,6 +232,7 @@
     <!-- Features -->
     <section class="features-section">
         <div class="container">
+            <h2>Neden convertudftopdf.com?</h2>
             <div class="features-grid">
                 <div class="feature">
                     <div class="feature-icon">
@@ -244,6 +338,7 @@
                     <a href="#converter">Dönüştürücü</a>
                     <a href="#how-it-works">Nasıl Çalışır</a>
                     <a href="#faq">SSS</a>
+                    <a href="udf-nedir.html">UDF Nedir?</a>
                     <a href="privacy.html">Gizlilik Politikası</a>
                 </div>
             </div>
@@ -270,6 +365,9 @@
             document.querySelectorAll('.footer-bottom p').forEach(function(el) {
                 el.innerHTML = el.innerHTML.replace('convertudftopdf.com', brandFull);
             });
+            // Canonical her zaman convertudftopdf.com'u gösterir (SEO güç birleşimi)
+            var canonical = document.querySelector('link[rel="canonical"]');
+            if (canonical) canonical.href = 'https://convertudftopdf.com';
         }
     })();
     </script>

@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sayfa Bulunamadı | convertudftopdf.com</title>
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .error-page {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 60vh;
+            text-align: center;
+            padding: 48px 24px;
+        }
+        .error-code {
+            font-size: 8rem;
+            font-weight: 800;
+            line-height: 1;
+            background: linear-gradient(135deg, #2563eb, #7c3aed);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 16px;
+        }
+        .error-page h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+        .error-page p {
+            color: var(--gray-400);
+            margin-bottom: 32px;
+            max-width: 400px;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <a href="/" class="logo">
+                <svg class="logo-icon" viewBox="0 0 32 32" fill="none">
+                    <rect width="32" height="32" rx="8" fill="#2563eb"/>
+                    <path d="M8 10h6v12H8V10zm10 0h6v12h-6V10z" fill="#fff" opacity="0.3"/>
+                    <path d="M13 16l6-4v8l-6-4z" fill="#fff"/>
+                </svg>
+                <span>convertudftopdf<small>.com</small></span>
+            </a>
+        </div>
+    </header>
+
+    <div class="error-page">
+        <div class="error-code">404</div>
+        <h1>Sayfa Bulunamadı</h1>
+        <p>Aradığınız sayfa mevcut değil veya taşınmış olabilir.</p>
+        <a href="/" class="btn btn-primary">Ana Sayfaya Dön</a>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-bottom">
+                <p>&copy; 2025 convertudftopdf.com — Tüm hakları saklıdır.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+    (function() {
+        var h = location.hostname;
+        if (h === 'udfkit.com' || h === 'www.udfkit.com') {
+            document.title = document.title.replace('convertudftopdf.com', 'udfkit.com');
+            document.querySelectorAll('.logo span').forEach(function(el) {
+                el.innerHTML = 'udfkit<small>.com</small>';
+            });
+            document.querySelectorAll('.footer-bottom p').forEach(function(el) {
+                el.innerHTML = el.innerHTML.replace('convertudftopdf.com', 'udfkit.com');
+            });
+        }
+    })();
+    </script>
+</body>
+</html>
