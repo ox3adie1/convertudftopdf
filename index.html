@@ -257,5 +257,21 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="converter.js"></script>
+    <script>
+    (function() {
+        var h = location.hostname;
+        if (h === 'udfkit.com' || h === 'www.udfkit.com') {
+            var brand = 'udfkit';
+            var brandFull = 'udfkit.com';
+            document.title = document.title.replace('convertudftopdf.com', brandFull);
+            document.querySelectorAll('.logo span').forEach(function(el) {
+                el.innerHTML = brand + '<small>.com</small>';
+            });
+            document.querySelectorAll('.footer-bottom p').forEach(function(el) {
+                el.innerHTML = el.innerHTML.replace('convertudftopdf.com', brandFull);
+            });
+        }
+    })();
+    </script>
 </body>
 </html>
