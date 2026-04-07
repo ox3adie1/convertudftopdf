@@ -50,7 +50,17 @@
             "price": "0",
             "priceCurrency": "TRY"
         },
-        "browserRequirements": "Chrome, Firefox, Edge, Safari"
+        "browserRequirements": "Chrome, Firefox, Edge, Safari",
+        "featureList": [
+            "Tamamen tarayıcıda çalışır",
+            "Dosyalar sunucuya yüklenmez",
+            "Toplu dönüştürme desteği",
+            "Ücretsiz ve kayıt gerektirmez"
+        ],
+        "screenshot": "https://convertudftopdf.com/og-image.png",
+        "softwareVersion": "1.0",
+        "datePublished": "2025-01-01",
+        "inLanguage": "tr"
     }
     </script>
     <script type="application/ld+json">
@@ -105,6 +115,30 @@
                     "@type": "Answer",
                     "text": "Evet, orijinal UDF dosyasındaki kalın yazı, altı çizili, italik, yazı tipi boyutu, hizalama gibi biçimlendirmeler PDF'e aktarılır."
                 }
+            },
+            {
+                "@type": "Question",
+                "name": "UDF dosyasını telefonda açabilir miyim?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "UDF dosyaları doğrudan telefonda açılamaz çünkü UYAP Döküman Editörü mobil cihazlarda çalışmaz. Ancak convertudftopdf.com üzerinden UDF dosyanızı PDF'e dönüştürerek telefonunuzda kolayca görüntüleyebilirsiniz."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "İnternet bağlantısı olmadan kullanabilir miyim?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Sayfa ilk yüklendikten sonra dönüştürme işlemi tamamen tarayıcınızda gerçekleşir. Ancak sayfayı açmak için internet bağlantısı gerekir. Dosyalarınız hiçbir zaman internet üzerinden gönderilmez."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "UYAP Döküman Editörü olmadan UDF dosyası açılabilir mi?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "UYAP Döküman Editörü, UDF dosyalarını doğrudan açabilen tek resmi yazılımdır ve yalnızca UYAP sistemine bağlı bilgisayarlarda çalışır. Editör dışında UDF dosyalarını görüntülemenin en pratik yolu, convertudftopdf.com ile PDF'e dönüştürmektir."
+                }
             }
         ]
     }
@@ -117,6 +151,17 @@
         "url": "https://convertudftopdf.com",
         "logo": "https://convertudftopdf.com/favicon.svg",
         "sameAs": ["https://x.com/plajterligi"]
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "name": "UDF to PDF Converter",
+        "speakable": {
+            "@type": "SpeakableSpecification",
+            "cssSelector": [".faq-list", ".hero h1", ".hero .hero-subtitle"]
+        }
     }
     </script>
 </head>
@@ -314,6 +359,18 @@
                     <summary>PDF çıktısında biçimlendirme korunuyor mu?</summary>
                     <p>Evet, orijinal UDF dosyasındaki kalın yazı, altı çizili, italik, yazı tipi boyutu, hizalama gibi biçimlendirmeler PDF'e aktarılır.</p>
                 </details>
+                <details class="faq-item">
+                    <summary>UDF dosyasını telefonda açabilir miyim?</summary>
+                    <p>UDF dosyaları doğrudan telefonda açılamaz çünkü UYAP Döküman Editörü mobil cihazlarda çalışmaz. Ancak convertudftopdf.com üzerinden UDF dosyanızı PDF'e dönüştürerek telefonunuzda kolayca görüntüleyebilirsiniz. Sitemiz mobil tarayıcılarda sorunsuz çalışır.</p>
+                </details>
+                <details class="faq-item">
+                    <summary>İnternet bağlantısı olmadan kullanabilir miyim?</summary>
+                    <p>Sayfa ilk yüklendikten sonra dönüştürme işlemi tamamen tarayıcınızda gerçekleşir. Ancak sayfayı açmak için internet bağlantısı gerekir. Dosyalarınız hiçbir zaman internet üzerinden gönderilmez.</p>
+                </details>
+                <details class="faq-item">
+                    <summary>UYAP Döküman Editörü olmadan UDF dosyası açılabilir mi?</summary>
+                    <p>UYAP Döküman Editörü, UDF dosyalarını doğrudan açabilen tek resmi yazılımdır ve yalnızca UYAP sistemine bağlı bilgisayarlarda çalışır. Editör dışında UDF dosyalarını görüntülemenin en pratik yolu, convertudftopdf.com ile PDF'e dönüştürmektir.</p>
+                </details>
             </div>
         </div>
     </section>
@@ -339,6 +396,8 @@
                     <a href="#how-it-works">Nasıl Çalışır</a>
                     <a href="#faq">SSS</a>
                     <a href="udf-nedir.html">UDF Nedir?</a>
+                    <a href="uyap-pdf-donusturucu.html">UYAP PDF Dönüştürücü</a>
+                    <a href="udf-dosyasi-acma.html">UDF Dosyası Açma</a>
                     <a href="privacy.html">Gizlilik Politikası</a>
                 </div>
             </div>
@@ -349,9 +408,9 @@
     </footer>
 
     <!-- Scripts -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="converter.js"></script>
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script defer src="converter.js"></script>
     <script>
     (function() {
         var h = location.hostname;
