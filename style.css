@@ -307,6 +307,17 @@ body {
     text-overflow: ellipsis;
 }
 
+.file-item-zip {
+    font-size: 0.7rem;
+    color: var(--gray-400);
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 4px;
+    padding: 1px 6px;
+    margin-left: 6px;
+    font-weight: 400;
+}
+
 .file-item-size {
     font-size: 0.8rem;
     color: var(--gray-400);

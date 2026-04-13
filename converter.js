@@ -28,9 +28,11 @@
     let fontCache = {};
 
     // ── File Type Helpers ──
-    const SUPPORTED_EXTENSIONS = ['.udf', '.tiff', '.tif'];
+    const CONVERTIBLE_EXTENSIONS = ['.udf', '.tiff', '.tif'];
     function getFileExtension(name) { return name.toLowerCase().substring(name.lastIndexOf('.')); }
-    function isSupportedFile(name) { return SUPPORTED_EXTENSIONS.includes(getFileExtension(name)); }
+    function isConvertibleFile(name) { return CONVERTIBLE_EXTENSIONS.includes(getFileExtension(name)); }
+    function isZipFile(name) { return getFileExtension(name) === '.zip'; }
+    function isAcceptedFile(name) { return isConvertibleFile(name) || isZipFile(name); }
     function isTiffFile(name) { const ext = getFileExtension(name); return ext === '.tiff' || ext === '.tif'; }
     function toPdfFilename(name) { return name.replace(/\.(udf|tiff|tif)$/i, '.pdf'); }
 
@@ -82,8 +84,8 @@
 
     dropZone.addEventListener('click', () => fileInput.click());
 
-    fileInput.addEventListener('change', (e) => {
-        addFiles(e.target.files);
+    fileInput.addEventListener('change', async (e) => {
+        await addFiles(e.target.files);
         fileInput.value = '';
     });
 
@@ -96,12 +98,12 @@
         dropZone.classList.remove('drag-over');
     });
 
-    dropZone.addEventListener('drop', (e) => {
+    dropZone.addEventListener('drop', async (e) => {
         e.preventDefault();
         dropZone.classList.remove('drag-over');
-        const droppedFiles = Array.from(e.dataTransfer.files).filter(f => isSupportedFile(f.name));
+        const droppedFiles = Array.from(e.dataTransfer.files).filter(f => isAcceptedFile(f.name));
         if (droppedFiles.length > 0) {
-            addFiles(droppedFiles);
+            await addFiles(droppedFiles);
         }
     });
 
@@ -113,9 +115,13 @@
     convertAllBtn.addEventListener('click', convertAll);
 
     // ── File Management ──
-    function addFiles(newFiles) {
+    async function addFiles(newFiles) {
         for (const f of newFiles) {
-            if (!isSupportedFile(f.name)) continue;
+            if (isZipFile(f.name)) {
+                await extractZipAndAdd(f);
+                continue;
+            }
+            if (!isConvertibleFile(f.name)) continue;
 
             if (f.size > MAX_FILE_SIZE) {
                 files.push({ file: f, status: 'error', result: null, errorMsg: 'Dosya boyutu 10MB limitini aşıyor.' });
@@ -124,6 +130,53 @@
             }
         }
         renderFileList();
+    }
+
+    async function extractZipAndAdd(zipFile) {
+        let zip;
+        try {
+            const buf = await zipFile.arrayBuffer();
+            zip = await JSZip.loadAsync(buf);
+        } catch (e) {
+            files.push({ file: zipFile, status: 'error', result: null, errorMsg: 'ZIP dosyası açılamadı: dosya bozuk veya geçersiz.' });
+            return;
+        }
+
+        let found = 0;
+        const zipName = zipFile.name.replace(/\.zip$/i, '');
+
+        for (const [path, entry] of Object.entries(zip.files)) {
+            if (entry.dir) continue;
+            const fileName = path.split('/').pop();
+            if (!fileName) continue;
+
+            try {
+                const blob = await entry.async('blob');
+                const file = new File([blob], fileName, { type: blob.type });
+
+                if (isConvertibleFile(fileName)) {
+                    if (file.size > MAX_FILE_SIZE) {
+                        files.push({ file, status: 'error', result: null, errorMsg: 'Dosya boyutu 10MB limitini aşıyor.', fromZip: zipName });
+                    } else {
+                        files.push({ file, status: 'waiting', result: null, errorMsg: null, fromZip: zipName });
+                    }
+                } else {
+                    files.push({ file, status: 'passthrough', result: blob, errorMsg: null, fromZip: zipName });
+                }
+                found++;
+            } catch (e) {
+                files.push({
+                    file: { name: fileName, size: 0 },
+                    status: 'error', result: null,
+                    errorMsg: 'ZIP içinden çıkarılamadı: ' + fileName,
+                    fromZip: zipName
+                });
+            }
+        }
+
+        if (found === 0) {
+            files.push({ file: zipFile, status: 'error', result: null, errorMsg: 'ZIP dosyası boş.' });
+        }
     }
 
     function removeFile(index) {
@@ -146,17 +199,23 @@
             div.className = 'file-item';
 
             const statusBadge = getStatusBadge(entry.status);
-            const downloadBtn = entry.status === 'done' && entry.result
+            const isDownloadable = (entry.status === 'done' || entry.status === 'passthrough') && entry.result;
+            const downloadBtn = isDownloadable
                 ? `<button class="btn btn-success btn-sm" data-download="${i}">İndir</button>`
                 : '';
             const errorMsg = entry.errorMsg
                 ? `<div class="file-item-error">${escapeHtml(entry.errorMsg)}</div>`
                 : '';
 
+            const iconLabel = entry.status === 'passthrough'
+                ? getFileExtension(entry.file.name).replace('.', '').toUpperCase()
+                : (isTiffFile(entry.file.name) ? 'TIFF' : 'UDF');
+            const fromZipLabel = entry.fromZip ? `<span class="file-item-zip">${escapeHtml(entry.fromZip)}.zip</span>` : '';
+
             div.innerHTML = `
-                <div class="file-item-icon">${isTiffFile(entry.file.name) ? 'TIFF' : 'UDF'}</div>
+                <div class="file-item-icon">${iconLabel}</div>
                 <div class="file-item-info">
-                    <div class="file-item-name" title="${escapeHtml(entry.file.name)}">${escapeHtml(entry.file.name)}</div>
+                    <div class="file-item-name" title="${escapeHtml(entry.file.name)}">${escapeHtml(entry.file.name)} ${fromZipLabel}</div>
                     <div class="file-item-size">${formatSize(entry.file.size)}</div>
                     ${errorMsg}
                 </div>
@@ -181,7 +240,8 @@
                 e.stopPropagation();
                 const entry = files[parseInt(btn.dataset.download)];
                 if (entry && entry.result) {
-                    downloadPdf(entry.result, toPdfFilename(entry.file.name));
+                    const name = entry.status === 'passthrough' ? entry.file.name : toPdfFilename(entry.file.name);
+                    downloadPdf(entry.result, name);
                 }
             });
         });
@@ -193,6 +253,7 @@
             converting: '<span class="badge badge-converting">Dönüştürülüyor</span>',
             done: '<span class="badge badge-done">Tamamlandı</span>',
             error: '<span class="badge badge-error">Hata</span>',
+            passthrough: '<span class="badge badge-done">Hazır</span>',
         };
         return map[status] || '';
     }
@@ -219,10 +280,10 @@
         }
 
         let processed = 0;
-        const total = files.filter(f => f.status !== 'done' && f.status !== 'error').length;
+        const total = files.filter(f => f.status === 'waiting').length;
 
         for (let i = 0; i < files.length; i++) {
-            if (files[i].status === 'done' || files[i].status === 'error') continue;
+            if (files[i].status !== 'waiting') continue;
 
             files[i].status = 'converting';
             renderFileList();
@@ -248,21 +309,24 @@
 
         progressBar.style.width = '100%';
         const doneCount = files.filter(f => f.status === 'done').length;
+        const passthroughCount = files.filter(f => f.status === 'passthrough').length;
         const errorCount = files.filter(f => f.status === 'error').length;
 
         if (errorCount > 0) {
             progressText.textContent = `${doneCount} dosya dönüştürüldü, ${errorCount} dosyada hata oluştu.`;
         } else {
-            progressText.textContent = 'Tüm dosyalar dönüştürüldü!';
+            progressText.textContent = 'Tüm dosyalar hazır!';
         }
 
         convertAllBtn.disabled = false;
 
-        const doneFiles = files.filter(f => f.status === 'done');
-        if (doneFiles.length === 1) {
-            downloadPdf(doneFiles[0].result, toPdfFilename(doneFiles[0].file.name));
-        } else if (doneFiles.length > 1) {
-            await downloadAllAsZip(doneFiles);
+        const outputFiles = files.filter(f => f.status === 'done' || f.status === 'passthrough');
+        if (outputFiles.length === 1 && outputFiles[0].status === 'done') {
+            downloadPdf(outputFiles[0].result, toPdfFilename(outputFiles[0].file.name));
+        } else if (outputFiles.length === 1 && outputFiles[0].status === 'passthrough') {
+            downloadPdf(outputFiles[0].result, outputFiles[0].file.name);
+        } else if (outputFiles.length > 1) {
+            await downloadAllAsZip(outputFiles);
         }
     }
 
@@ -731,17 +795,14 @@
         URL.revokeObjectURL(url);
     }
 
-    async function downloadAllAsZip(doneFiles) {
+    async function downloadAllAsZip(outputFiles) {
         const zip = new JSZip();
-        doneFiles.forEach(entry => {
-            zip.file(toPdfFilename(entry.file.name), entry.result);
+        outputFiles.forEach(entry => {
+            const name = entry.status === 'passthrough' ? entry.file.name : toPdfFilename(entry.file.name);
+            zip.file(name, entry.result);
         });
 
-        const hasUdf = doneFiles.some(e => !isTiffFile(e.file.name));
-        const hasTiff = doneFiles.some(e => isTiffFile(e.file.name));
         let zipName = 'converted-to-pdf.zip';
-        if (hasUdf && !hasTiff) zipName = 'udf-to-pdf.zip';
-        else if (hasTiff && !hasUdf) zipName = 'tiff-to-pdf.zip';
 
         const zipBlob = await zip.generateAsync({ type: 'blob' });
         const url = URL.createObjectURL(zipBlob);
