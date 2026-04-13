@@ -3,4 +3,5 @@ backlink_worker.py
 run_batch.py
 backlink_rapor.md
 backlink-plani.md
+indexnow-submit.py
 .claude/

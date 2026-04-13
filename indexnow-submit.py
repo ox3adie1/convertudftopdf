@@ -3,7 +3,7 @@
 import json
 import urllib.request
 
-INDEXNOW_KEY = "bcdf1d4ca85d4302bd08701254f851b5"
+INDEXNOW_KEY = "dc90cf242200482c984b878da1cb3083"
 
 URLS_CONVERTUDFTOPDF = [
     "https://convertudftopdf.com/",

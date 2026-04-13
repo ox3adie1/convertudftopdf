@@ -133,6 +133,7 @@
     }
 
     async function extractZipAndAdd(zipFile) {
+        const MAX_ZIP_TOTAL = 50 * 1024 * 1024; // 50MB toplam çıkarma limiti
         let zip;
         try {
             const buf = await zipFile.arrayBuffer();
@@ -143,15 +144,24 @@
         }
 
         let found = 0;
+        let totalExtracted = 0;
         const zipName = zipFile.name.replace(/\.zip$/i, '');
 
         for (const [path, entry] of Object.entries(zip.files)) {
             if (entry.dir) continue;
+            if (path.includes('..')) continue; // path traversal koruması
             const fileName = path.split('/').pop();
             if (!fileName) continue;
 
             try {
                 const blob = await entry.async('blob');
+
+                totalExtracted += blob.size;
+                if (totalExtracted > MAX_ZIP_TOTAL) {
+                    files.push({ file: zipFile, status: 'error', result: null, errorMsg: 'ZIP içeriği 50MB toplam limiti aşıyor.' });
+                    return;
+                }
+
                 const file = new File([blob], fileName, { type: blob.type });
 
                 if (isConvertibleFile(fileName)) {
@@ -716,8 +726,18 @@
     }
 
     // ── TIFF to PDF Conversion ──
+    const MAX_TIFF_DIMENSION = 10000; // px
+    const MAX_TIFF_PIXELS = 100_000_000; // 100MP
+
     async function convertTiffToPdf(file) {
         const buf = await file.arrayBuffer();
+
+        // TIFF magic number doğrulaması
+        const header = new Uint8Array(buf, 0, 4);
+        const isTiff = (header[0] === 0x49 && header[1] === 0x49 && header[2] === 0x2A && header[3] === 0x00)
+                     || (header[0] === 0x4D && header[1] === 0x4D && header[2] === 0x00 && header[3] === 0x2A);
+        if (!isTiff) throw new Error('Geçerli bir TIFF dosyası değil.');
+
         let ifds;
         try {
             ifds = UTIF.decode(buf);
@@ -746,6 +766,10 @@
             const rgba = UTIF.toRGBA8(ifds[i]);
             const w = ifds[i].width;
             const h = ifds[i].height;
+
+            if (w > MAX_TIFF_DIMENSION || h > MAX_TIFF_DIMENSION || w * h > MAX_TIFF_PIXELS) {
+                throw new Error('TIFF boyutları güvenlik limitini aşıyor (' + w + 'x' + h + ').');
+            }
 
             canvas.width = w;
             canvas.height = h;

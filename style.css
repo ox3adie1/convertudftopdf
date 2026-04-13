@@ -40,6 +40,7 @@ body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     color: var(--gray-800);
     background: #fff;
+    color-scheme: light only;
     line-height: 1.6;
     -webkit-font-smoothing: antialiased;
 }
