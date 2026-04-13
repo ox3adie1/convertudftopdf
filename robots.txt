@@ -2,6 +2,7 @@ User-agent: *
 Allow: /
 Disallow: /fonts/
 Disallow: /__pycache__/
+Disallow: /og-image.html
+Disallow: /twitter-preview.html
 
 Sitemap: https://convertudftopdf.com/sitemap.xml
-Sitemap: https://udfkit.com/sitemap-udfkit.xml

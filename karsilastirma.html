@@ -25,26 +25,11 @@
     <link rel="manifest" href="manifest.json">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <meta name="google-adsense-account" content="ca-pub-4410660717929931">
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4410660717929931" crossorigin="anonymous"></script>
     <link rel="stylesheet" href="style.css">
     <style>
-        .article-content { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
-        .article-content h1 { font-size: 2rem; font-weight: 700; margin-bottom: 8px; line-height: 1.3; }
-        .article-meta { color: var(--gray-400); font-size: 0.85rem; margin-bottom: 32px; }
-        .article-content h2 { font-size: 1.35rem; font-weight: 600; margin-top: 36px; margin-bottom: 14px; }
-        .article-content h3 { font-size: 1.1rem; font-weight: 600; margin-top: 24px; margin-bottom: 10px; }
-        .article-content p, .article-content li { font-size: 0.95rem; color: var(--gray-600); line-height: 1.8; }
-        .article-content ul, .article-content ol { padding-left: 20px; margin: 12px 0; }
-        .article-content li { margin-bottom: 6px; }
-        .article-content a { color: #2563eb; text-decoration: underline; }
-        .article-content a:hover { color: #1d4ed8; }
-        .info-box { background: rgba(37, 99, 235, 0.08); border-left: 4px solid #2563eb; padding: 16px 20px; border-radius: 0 8px 8px 0; margin: 20px 0; }
-        .info-box p { margin: 0; color: var(--gray-300); }
-        .cta-box { background: linear-gradient(135deg, rgba(37, 99, 235, 0.15), rgba(124, 58, 237, 0.1)); border-radius: 12px; padding: 32px; text-align: center; margin: 40px 0; }
-        .cta-box h3 { color: var(--gray-100); margin-bottom: 12px; }
-        .cta-box p { margin-bottom: 20px; }
         .comparison-table { width: 100%; border-collapse: collapse; margin: 24px 0; border-radius: 12px; overflow: hidden; }
         .comparison-table th { background: rgba(37, 99, 235, 0.15); color: var(--gray-100); padding: 14px 16px; text-align: left; font-weight: 600; font-size: 0.9rem; }
         .comparison-table td { padding: 12px 16px; border-bottom: 1px solid rgba(255,255,255,0.06); font-size: 0.9rem; color: var(--gray-400); }
@@ -97,6 +82,46 @@
         "dateModified": "2026-04-07",
         "mainEntityOfPage": { "@type": "WebPage", "@id": "https://convertudftopdf.com/karsilastirma.html" },
         "image": "https://convertudftopdf.com/og-image.png"
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+            {
+                "@type": "Question",
+                "name": "UDF ve PDF arasindaki temel fark nedir?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "UDF (UYAP Document Format) yalnizca UYAP Dokuman Editoru ile acilabilen ozel bir dosya formatidir. PDF ise dunyanin her yerinde, her cihazda acilabilen evrensel bir belge formatidir. UDF sadece Turk yargi sistemi icinde kullanilirken, PDF tum platformlarda desteklenir."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "UDF dosyalarini neden PDF'e donusturmeliyim?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "UDF dosyalari sadece UYAP'a bagli bilgisayarlarda acilabilir. Muvekkillere belge gonderirken, arsivlerken, e-posta ile paylasirken, mobil cihazlarda okumak veya yazdirmak icin PDF'e donusturmeniz gerekir. PDF her cihazda sorunsuz acilir."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "UDF dosyasi mobil cihazlarda acilabilir mi?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Hayir, UDF dosyalari mobil cihazlarda dogrudan acilamaz. Ancak convertudftopdf.com ile UDF dosyanizi PDF'e donusturerek telefonunuzda veya tabletinizde goruntuleyebilirsiniz."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "PDF ve UDF hangi guvenlik ozelliklerine sahiptir?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Her iki format da guvenli ozellikler sunar. UDF, UYAP ekosistemine entegre e-imza ve erisim kontrolune sahiptir. PDF ise sifre korumasi, dijital imza, duzenleme kisitlamasi ve PDF/A arsiv standardini destekler."
+                }
+            }
+        ]
     }
     </script>
 </head>
@@ -301,35 +326,11 @@
                 </div>
             </div>
             <div class="footer-bottom">
-                <p>&copy; 2025 convertudftopdf.com &mdash; Tum haklari saklidir.</p>
+                <p>&copy; 2026 convertudftopdf.com &mdash; Tum haklari saklidir.</p>
             </div>
         </div>
     </footer>
 
-    <script>
-    (function() {
-        var h = location.hostname;
-        if (h === 'udfkit.com' || h === 'www.udfkit.com') {
-            var brandFull = 'udfkit.com';
-            document.title = document.title.replace('convertudftopdf.com', brandFull);
-            document.querySelectorAll('.logo span').forEach(function(el) {
-                el.innerHTML = 'udfkit<small>.com</small>';
-            });
-            document.querySelectorAll('.footer-bottom p').forEach(function(el) {
-                el.innerHTML = el.innerHTML.replace('convertudftopdf.com', brandFull);
-            });
-            var canonical = document.querySelector('link[rel="canonical"]');
-            if (canonical) canonical.href = canonical.href.replace('convertudftopdf.com', brandFull);
-            document.querySelectorAll('link[hreflang]').forEach(function(el) {
-                el.href = el.href.replace('convertudftopdf.com', brandFull);
-            });
-            var ogUrl = document.querySelector('meta[property="og:url"]');
-            if (ogUrl) ogUrl.content = ogUrl.content.replace('convertudftopdf.com', brandFull);
-            document.querySelectorAll('script[type="application/ld+json"]').forEach(function(el) {
-                el.textContent = el.textContent.replace(/convertudftopdf\.com/g, brandFull);
-            });
-        }
-    })();
-    </script>
+
 </body>
 </html>

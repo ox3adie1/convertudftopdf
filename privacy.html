@@ -16,17 +16,9 @@
     <link rel="manifest" href="manifest.json">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
-    <style>
-        .privacy-content { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
-        .privacy-content h1 { font-size: 2rem; font-weight: 700; margin-bottom: 8px; }
-        .privacy-content .date { color: var(--gray-400); font-size: 0.85rem; margin-bottom: 32px; }
-        .privacy-content h2 { font-size: 1.2rem; font-weight: 600; margin-top: 32px; margin-bottom: 12px; }
-        .privacy-content p, .privacy-content li { font-size: 0.95rem; color: var(--gray-600); line-height: 1.8; }
-        .privacy-content ul { padding-left: 20px; margin: 12px 0; }
-        .privacy-content li { margin-bottom: 6px; }
-    </style>
+
 </head>
 <body>
     <header class="header">
@@ -89,34 +81,9 @@
     <footer class="footer">
         <div class="container">
             <div class="footer-bottom">
-                <p>&copy; 2025 convertudftopdf.com — Tüm hakları saklıdır.</p>
+                <p>&copy; 2026 convertudftopdf.com — Tüm hakları saklıdır.</p>
             </div>
         </div>
     </footer>
-
-    <script>
-    (function() {
-        var h = location.hostname;
-        if (h === 'udfkit.com' || h === 'www.udfkit.com') {
-            var brandFull = 'udfkit.com';
-            document.title = document.title.replace('convertudftopdf.com', brandFull);
-            document.querySelectorAll('.logo span').forEach(function(el) {
-                el.innerHTML = 'udfkit<small>.com</small>';
-            });
-            document.querySelectorAll('.footer-bottom p').forEach(function(el) {
-                el.innerHTML = el.innerHTML.replace('convertudftopdf.com', brandFull);
-            });
-            // Privacy content içindeki marka referanslarını güncelle
-            document.querySelectorAll('.privacy-content p').forEach(function(el) {
-                el.innerHTML = el.innerHTML.replace(/convertudftopdf\.com/g, brandFull);
-            });
-            var canonical = document.querySelector('link[rel="canonical"]');
-            if (canonical) canonical.href = canonical.href.replace('convertudftopdf.com', brandFull);
-            document.querySelectorAll('script[type="application/ld+json"]').forEach(function(el) {
-                el.textContent = el.textContent.replace(/convertudftopdf\.com/g, brandFull);
-            });
-        }
-    })();
-    </script>
 </body>
 </html>
