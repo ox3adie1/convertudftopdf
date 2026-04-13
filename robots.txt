@@ -1,6 +1,7 @@
 User-agent: *
 Allow: /
 Disallow: /fonts/
+Disallow: /__pycache__/
 
 Sitemap: https://convertudftopdf.com/sitemap.xml
-Sitemap: https://udfkit.com/sitemap.xml
+Sitemap: https://udfkit.com/sitemap-udfkit.xml
