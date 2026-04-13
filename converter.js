@@ -27,6 +27,13 @@
     let fontsLoaded = false;
     let fontCache = {};
 
+    // ── File Type Helpers ──
+    const SUPPORTED_EXTENSIONS = ['.udf', '.tiff', '.tif'];
+    function getFileExtension(name) { return name.toLowerCase().substring(name.lastIndexOf('.')); }
+    function isSupportedFile(name) { return SUPPORTED_EXTENSIONS.includes(getFileExtension(name)); }
+    function isTiffFile(name) { const ext = getFileExtension(name); return ext === '.tiff' || ext === '.tif'; }
+    function toPdfFilename(name) { return name.replace(/\.(udf|tiff|tif)$/i, '.pdf'); }
+
     // ── Font Loading ──
     async function loadFonts() {
         if (fontsLoaded) return;
@@ -92,7 +99,7 @@
     dropZone.addEventListener('drop', (e) => {
         e.preventDefault();
         dropZone.classList.remove('drag-over');
-        const droppedFiles = Array.from(e.dataTransfer.files).filter(f => f.name.toLowerCase().endsWith('.udf'));
+        const droppedFiles = Array.from(e.dataTransfer.files).filter(f => isSupportedFile(f.name));
         if (droppedFiles.length > 0) {
             addFiles(droppedFiles);
         }
@@ -108,7 +115,7 @@
     // ── File Management ──
     function addFiles(newFiles) {
         for (const f of newFiles) {
-            if (!f.name.toLowerCase().endsWith('.udf')) continue;
+            if (!isSupportedFile(f.name)) continue;
 
             if (f.size > MAX_FILE_SIZE) {
                 files.push({ file: f, status: 'error', result: null, errorMsg: 'Dosya boyutu 10MB limitini aşıyor.' });
@@ -147,7 +154,7 @@
                 : '';
 
             div.innerHTML = `
-                <div class="file-item-icon">UDF</div>
+                <div class="file-item-icon">${isTiffFile(entry.file.name) ? 'TIFF' : 'UDF'}</div>
                 <div class="file-item-info">
                     <div class="file-item-name" title="${escapeHtml(entry.file.name)}">${escapeHtml(entry.file.name)}</div>
                     <div class="file-item-size">${formatSize(entry.file.size)}</div>
@@ -174,7 +181,7 @@
                 e.stopPropagation();
                 const entry = files[parseInt(btn.dataset.download)];
                 if (entry && entry.result) {
-                    downloadPdf(entry.result, entry.file.name.replace(/\.udf$/i, '.pdf'));
+                    downloadPdf(entry.result, toPdfFilename(entry.file.name));
                 }
             });
         });
@@ -197,15 +204,18 @@
 
         convertAllBtn.disabled = true;
         progressArea.hidden = false;
-        progressText.textContent = 'Fontlar yükleniyor...';
 
-        try {
-            await loadFonts();
-        } catch (err) {
-            console.error('Font loading error:', err);
-            progressText.textContent = 'Font yükleme hatası! Sayfa bir HTTP sunucu üzerinden açılmalıdır.';
-            convertAllBtn.disabled = false;
-            return;
+        const hasUdfFiles = pending.some(f => !isTiffFile(f.file.name));
+        if (hasUdfFiles) {
+            progressText.textContent = 'Fontlar yükleniyor...';
+            try {
+                await loadFonts();
+            } catch (err) {
+                console.error('Font loading error:', err);
+                progressText.textContent = 'Font yükleme hatası! Sayfa bir HTTP sunucu üzerinden açılmalıdır.';
+                convertAllBtn.disabled = false;
+                return;
+            }
         }
 
         let processed = 0;
@@ -221,7 +231,9 @@
             progressText.textContent = `Dönüştürülüyor: ${files[i].file.name} (${processed}/${total})`;
 
             try {
-                const pdfBlob = await convertUdfToPdf(files[i].file);
+                const pdfBlob = isTiffFile(files[i].file.name)
+                    ? await convertTiffToPdf(files[i].file)
+                    : await convertUdfToPdf(files[i].file);
                 files[i].status = 'done';
                 files[i].result = pdfBlob;
                 files[i].errorMsg = null;
@@ -248,7 +260,7 @@
 
         const doneFiles = files.filter(f => f.status === 'done');
         if (doneFiles.length === 1) {
-            downloadPdf(doneFiles[0].result, doneFiles[0].file.name.replace(/\.udf$/i, '.pdf'));
+            downloadPdf(doneFiles[0].result, toPdfFilename(doneFiles[0].file.name));
         } else if (doneFiles.length > 1) {
             await downloadAllAsZip(doneFiles);
         }
@@ -257,8 +269,10 @@
     function getErrorMessage(err) {
         const msg = err.message || '';
         if (msg.includes('content.xml')) return 'Geçerli bir UDF dosyası değil: content.xml bulunamadı.';
-        if (msg.includes('Not a valid zip') || msg.includes('Corrupted') || msg.includes('invalid')) return 'Dosya bozuk veya geçerli bir UDF dosyası değil.';
+        if (msg.includes('Not a valid zip') || msg.includes('Corrupted') || msg.includes('invalid')) return 'Dosya bozuk veya geçerli bir UDF/TIFF dosyası değil.';
         if (msg.includes('End of data')) return 'Dosya bozuk — eksik veya tamamlanmamış arşiv.';
+        if (msg.includes('TIFF')) return 'Geçerli bir TIFF dosyası değil veya dosya bozuk.';
+        if (msg.includes('UTIF')) return 'TIFF dosyası işlenirken hata oluştu. Dosya formatını kontrol edin.';
         return 'Dönüştürme sırasında bir hata oluştu: ' + msg;
     }
 
@@ -637,6 +651,74 @@
         return doc.output('blob');
     }
 
+    // ── TIFF to PDF Conversion ──
+    async function convertTiffToPdf(file) {
+        const buf = await file.arrayBuffer();
+        let ifds;
+        try {
+            ifds = UTIF.decode(buf);
+        } catch (e) {
+            throw new Error('TIFF decode hatası: geçerli bir TIFF dosyası değil.');
+        }
+
+        if (!ifds || ifds.length === 0) {
+            throw new Error('TIFF dosyasında sayfa bulunamadı.');
+        }
+
+        const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+        const MARGIN = 5;
+        const pageW = 210;
+        const pageH = 297;
+        const usableW = pageW - 2 * MARGIN;
+        const usableH = pageH - 2 * MARGIN;
+
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+
+        for (let i = 0; i < ifds.length; i++) {
+            if (i > 0) doc.addPage();
+
+            UTIF.decodeImage(buf, ifds[i]);
+            const rgba = UTIF.toRGBA8(ifds[i]);
+            const w = ifds[i].width;
+            const h = ifds[i].height;
+
+            canvas.width = w;
+            canvas.height = h;
+            const imgData = ctx.createImageData(w, h);
+            imgData.data.set(new Uint8Array(rgba.buffer || rgba));
+            ctx.putImageData(imgData, 0, 0);
+
+            const jpegDataUrl = canvas.toDataURL('image/jpeg', 0.92);
+
+            // Fit to A4 with margins, preserve aspect ratio, center
+            const imgAspect = w / h;
+            const pageAspect = usableW / usableH;
+            let renderW, renderH;
+
+            if (imgAspect > pageAspect) {
+                renderW = usableW;
+                renderH = usableW / imgAspect;
+            } else {
+                renderH = usableH;
+                renderW = usableH * imgAspect;
+            }
+
+            const x = MARGIN + (usableW - renderW) / 2;
+            const y = MARGIN + (usableH - renderH) / 2;
+
+            doc.addImage(jpegDataUrl, 'JPEG', x, y, renderW, renderH);
+
+            // Free memory
+            ctx.clearRect(0, 0, w, h);
+        }
+
+        canvas.width = 1;
+        canvas.height = 1;
+
+        return doc.output('blob');
+    }
+
     // ── Download Helpers ──
     function downloadPdf(blob, filename) {
         const url = URL.createObjectURL(blob);
@@ -652,15 +734,20 @@
     async function downloadAllAsZip(doneFiles) {
         const zip = new JSZip();
         doneFiles.forEach(entry => {
-            const pdfName = entry.file.name.replace(/\.udf$/i, '.pdf');
-            zip.file(pdfName, entry.result);
+            zip.file(toPdfFilename(entry.file.name), entry.result);
         });
+
+        const hasUdf = doneFiles.some(e => !isTiffFile(e.file.name));
+        const hasTiff = doneFiles.some(e => isTiffFile(e.file.name));
+        let zipName = 'converted-to-pdf.zip';
+        if (hasUdf && !hasTiff) zipName = 'udf-to-pdf.zip';
+        else if (hasTiff && !hasUdf) zipName = 'tiff-to-pdf.zip';
 
         const zipBlob = await zip.generateAsync({ type: 'blob' });
         const url = URL.createObjectURL(zipBlob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = 'udf-to-pdf.zip';
+        a.download = zipName;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
