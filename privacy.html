@@ -110,9 +110,11 @@
             document.querySelectorAll('.privacy-content p').forEach(function(el) {
                 el.innerHTML = el.innerHTML.replace(/convertudftopdf\.com/g, brandFull);
             });
-            // Canonical her zaman convertudftopdf.com'u gösterir
             var canonical = document.querySelector('link[rel="canonical"]');
-            if (canonical) canonical.href = 'https://convertudftopdf.com/privacy.html';
+            if (canonical) canonical.href = canonical.href.replace('convertudftopdf.com', brandFull);
+            document.querySelectorAll('script[type="application/ld+json"]').forEach(function(el) {
+                el.textContent = el.textContent.replace(/convertudftopdf\.com/g, brandFull);
+            });
         }
     })();
     </script>

@@ -312,7 +312,15 @@
                 el.innerHTML = el.innerHTML.replace('convertudftopdf.com', brandFull);
             });
             var canonical = document.querySelector('link[rel="canonical"]');
-            if (canonical) canonical.href = 'https://convertudftopdf.com/udf-dosyasi-acma.html';
+            if (canonical) canonical.href = canonical.href.replace('convertudftopdf.com', brandFull);
+            document.querySelectorAll('link[hreflang]').forEach(function(el) {
+                el.href = el.href.replace('convertudftopdf.com', brandFull);
+            });
+            var ogUrl = document.querySelector('meta[property="og:url"]');
+            if (ogUrl) ogUrl.content = ogUrl.content.replace('convertudftopdf.com', brandFull);
+            document.querySelectorAll('script[type="application/ld+json"]').forEach(function(el) {
+                el.textContent = el.textContent.replace(/convertudftopdf\.com/g, brandFull);
+            });
         }
     })();
     </script>

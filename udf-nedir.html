@@ -21,6 +21,9 @@
     <meta name="twitter:description" content="UDF dosyası nedir? UYAP Döküman Editörü formatı hakkında detaylı bilgi ve PDF'e dönüştürme rehberi.">
     <meta name="twitter:image" content="https://convertudftopdf.com/og-image.png">
     <link rel="canonical" href="https://convertudftopdf.com/udf-nedir.html">
+    <link rel="alternate" hreflang="tr" href="https://convertudftopdf.com/udf-nedir.html">
+    <link rel="alternate" hreflang="en" href="https://convertudftopdf.com/en/what-is-udf.html">
+    <link rel="alternate" hreflang="x-default" href="https://convertudftopdf.com/udf-nedir.html">
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <link rel="manifest" href="manifest.json">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -231,9 +234,16 @@
             document.querySelectorAll('.footer-bottom p').forEach(function(el) {
                 el.innerHTML = el.innerHTML.replace('convertudftopdf.com', brandFull);
             });
-            // Canonical her zaman convertudftopdf.com'u gösterir (SEO güç birleşimi)
             var canonical = document.querySelector('link[rel="canonical"]');
-            if (canonical) canonical.href = 'https://convertudftopdf.com/udf-nedir.html';
+            if (canonical) canonical.href = canonical.href.replace('convertudftopdf.com', brandFull);
+            document.querySelectorAll('link[hreflang]').forEach(function(el) {
+                el.href = el.href.replace('convertudftopdf.com', brandFull);
+            });
+            var ogUrl = document.querySelector('meta[property="og:url"]');
+            if (ogUrl) ogUrl.content = ogUrl.content.replace('convertudftopdf.com', brandFull);
+            document.querySelectorAll('script[type="application/ld+json"]').forEach(function(el) {
+                el.textContent = el.textContent.replace(/convertudftopdf\.com/g, brandFull);
+            });
         }
     })();
     </script>
