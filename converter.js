@@ -1,7 +1,9 @@
 /**
- * UDF to PDF Converter
- * Parses UYAP .udf files (ZIP containing content.xml) and generates PDF
+ * UDF to PDF/DOCX Converter
+ * Parses UYAP .udf files (ZIP containing content.xml) and generates PDF/DOCX
  * with embedded Noto Serif font for full Turkish character support.
+ * Features: header/footer, color, landscape, lists, colspan/rowspan,
+ * preview, copy text, Word export, OCR, embedded images, signature info.
  */
 
 (function () {
@@ -22,10 +24,16 @@
     const progressArea = document.getElementById('progressArea');
     const progressBar = document.getElementById('progressBar');
     const progressText = document.getElementById('progressText');
+    const previewModal = document.getElementById('previewModal');
+    const previewContent = document.getElementById('previewContent');
+    const previewClose = document.getElementById('previewClose');
+    const formatSelect = document.getElementById('formatSelect');
+    const ocrCheckbox = document.getElementById('ocrCheckbox');
 
     let files = [];
     let fontsLoaded = false;
     let fontCache = {};
+    let outputFormat = 'pdf';
 
     // ── File Type Helpers ──
     const CONVERTIBLE_EXTENSIONS = ['.udf', '.tiff', '.tif'];
@@ -34,7 +42,37 @@
     function isZipFile(name) { return getFileExtension(name) === '.zip'; }
     function isAcceptedFile(name) { return isConvertibleFile(name) || isZipFile(name); }
     function isTiffFile(name) { const ext = getFileExtension(name); return ext === '.tiff' || ext === '.tif'; }
+    function isUdfFile(name) { return getFileExtension(name) === '.udf'; }
     function toPdfFilename(name) { return name.replace(/\.(udf|tiff|tif)$/i, '.pdf'); }
+    function toDocxFilename(name) { return name.replace(/\.(udf)$/i, '.docx'); }
+    function toOutputFilename(name) {
+        if (outputFormat === 'docx' && isUdfFile(name)) return toDocxFilename(name);
+        return toPdfFilename(name);
+    }
+
+    // ── Color Parsing ──
+    function parseColor(colorStr) {
+        if (!colorStr) return null;
+        colorStr = colorStr.trim();
+        if (/^#?[0-9a-fA-F]{6}$/.test(colorStr)) {
+            const hex = colorStr.replace('#', '');
+            return { r: parseInt(hex.substring(0, 2), 16), g: parseInt(hex.substring(2, 4), 16), b: parseInt(hex.substring(4, 6), 16) };
+        }
+        if (/^\d+,\s*\d+,\s*\d+$/.test(colorStr)) {
+            const parts = colorStr.split(',').map(s => parseInt(s.trim()));
+            return { r: parts[0], g: parts[1], b: parts[2] };
+        }
+        if (/^-?\d+$/.test(colorStr)) {
+            let val = parseInt(colorStr);
+            if (val < 0) val = val & 0xFFFFFFFF; // Java negative packed integer → unsigned
+            const r = (val >> 16) & 0xFF;
+            const g = (val >> 8) & 0xFF;
+            const b = val & 0xFF;
+            if (r === 0 && g === 0 && b === 0) return null; // black is default
+            return { r, g, b };
+        }
+        return null;
+    }
 
     // ── Font Loading ──
     async function loadFonts() {
@@ -114,6 +152,28 @@
 
     convertAllBtn.addEventListener('click', convertAll);
 
+    if (formatSelect) {
+        formatSelect.addEventListener('change', (e) => {
+            outputFormat = e.target.value;
+        });
+    }
+
+    if (previewClose) {
+        previewClose.addEventListener('click', () => {
+            previewModal.hidden = true;
+            previewModal.classList.remove('active');
+        });
+    }
+
+    if (previewModal) {
+        previewModal.addEventListener('click', (e) => {
+            if (e.target === previewModal) {
+                previewModal.hidden = true;
+                previewModal.classList.remove('active');
+            }
+        });
+    }
+
     // ── File Management ──
     async function addFiles(newFiles) {
         for (const f of newFiles) {
@@ -133,7 +193,7 @@
     }
 
     async function extractZipAndAdd(zipFile) {
-        const MAX_ZIP_TOTAL = 50 * 1024 * 1024; // 50MB toplam çıkarma limiti
+        const MAX_ZIP_TOTAL = 50 * 1024 * 1024;
         let zip;
         try {
             const buf = await zipFile.arrayBuffer();
@@ -149,7 +209,7 @@
 
         for (const [path, entry] of Object.entries(zip.files)) {
             if (entry.dir) continue;
-            if (path.includes('..')) continue; // path traversal koruması
+            if (path.includes('..')) continue;
             const fileName = path.split('/').pop();
             if (!fileName) continue;
 
@@ -217,10 +277,23 @@
                 ? `<div class="file-item-error">${escapeHtml(entry.errorMsg)}</div>`
                 : '';
 
+            const isUdf = isUdfFile(entry.file.name);
+            const canPreviewOrCopy = isUdf && (entry.status === 'waiting' || entry.status === 'done');
+            const previewBtn = canPreviewOrCopy
+                ? `<button class="btn btn-outline btn-sm" data-preview="${i}" title="Önizle">Önizle</button>`
+                : '';
+            const copyBtn = canPreviewOrCopy
+                ? `<button class="btn btn-outline btn-sm" data-copy="${i}" title="Metni Kopyala">Kopyala</button>`
+                : '';
+
             const iconLabel = entry.status === 'passthrough'
                 ? getFileExtension(entry.file.name).replace('.', '').toUpperCase()
                 : (isTiffFile(entry.file.name) ? 'TIFF' : 'UDF');
             const fromZipLabel = entry.fromZip ? `<span class="file-item-zip">${escapeHtml(entry.fromZip)}.zip</span>` : '';
+
+            const sigInfo = entry.signatureInfo
+                ? `<div class="file-item-sig" title="İmza Bilgisi">${escapeHtml(entry.signatureInfo)}</div>`
+                : '';
 
             div.innerHTML = `
                 <div class="file-item-icon">${iconLabel}</div>
@@ -228,9 +301,12 @@
                     <div class="file-item-name" title="${escapeHtml(entry.file.name)}">${escapeHtml(entry.file.name)} ${fromZipLabel}</div>
                     <div class="file-item-size">${formatSize(entry.file.size)}</div>
                     ${errorMsg}
+                    ${sigInfo}
                 </div>
                 <div class="file-item-status">
                     ${statusBadge}
+                    ${previewBtn}
+                    ${copyBtn}
                     ${downloadBtn}
                     <button class="btn-remove" data-remove="${i}" title="Kaldır">&times;</button>
                 </div>
@@ -238,6 +314,7 @@
             fileItems.appendChild(div);
         });
 
+        // Remove button handlers
         fileItems.querySelectorAll('[data-remove]').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -245,14 +322,33 @@
             });
         });
 
+        // Download button handlers
         fileItems.querySelectorAll('[data-download]').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 const entry = files[parseInt(btn.dataset.download)];
                 if (entry && entry.result) {
-                    const name = entry.status === 'passthrough' ? entry.file.name : toPdfFilename(entry.file.name);
-                    downloadPdf(entry.result, name);
+                    const name = entry.status === 'passthrough' ? entry.file.name : toOutputFilename(entry.file.name);
+                    downloadBlob(entry.result, name);
                 }
+            });
+        });
+
+        // Preview button handlers
+        fileItems.querySelectorAll('[data-preview]').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                const entry = files[parseInt(btn.dataset.preview)];
+                if (entry) await previewFile(entry.file);
+            });
+        });
+
+        // Copy text button handlers
+        fileItems.querySelectorAll('[data-copy]').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                const entry = files[parseInt(btn.dataset.copy)];
+                if (entry) await copyFileText(entry.file, btn);
             });
         });
     }
@@ -276,7 +372,7 @@
         convertAllBtn.disabled = true;
         progressArea.hidden = false;
 
-        const hasUdfFiles = pending.some(f => !isTiffFile(f.file.name));
+        const hasUdfFiles = pending.some(f => isUdfFile(f.file.name));
         if (hasUdfFiles) {
             progressText.textContent = 'Fontlar yükleniyor...';
             try {
@@ -302,11 +398,18 @@
             progressText.textContent = `Dönüştürülüyor: ${files[i].file.name} (${processed}/${total})`;
 
             try {
-                const pdfBlob = isTiffFile(files[i].file.name)
-                    ? await convertTiffToPdf(files[i].file)
-                    : await convertUdfToPdf(files[i].file);
+                let result;
+                if (isTiffFile(files[i].file.name)) {
+                    const useOcr = ocrCheckbox && ocrCheckbox.checked;
+                    result = await convertTiffToPdf(files[i].file, useOcr);
+                } else if (outputFormat === 'docx') {
+                    result = await convertUdfToDocx(files[i].file);
+                } else {
+                    result = await convertUdfToPdf(files[i].file);
+                }
                 files[i].status = 'done';
-                files[i].result = pdfBlob;
+                files[i].result = result.blob || result;
+                files[i].signatureInfo = result.signatureInfo || null;
                 files[i].errorMsg = null;
             } catch (err) {
                 console.error('Conversion error:', err);
@@ -332,9 +435,9 @@
 
         const outputFiles = files.filter(f => f.status === 'done' || f.status === 'passthrough');
         if (outputFiles.length === 1 && outputFiles[0].status === 'done') {
-            downloadPdf(outputFiles[0].result, toPdfFilename(outputFiles[0].file.name));
+            downloadBlob(outputFiles[0].result, toOutputFilename(outputFiles[0].file.name));
         } else if (outputFiles.length === 1 && outputFiles[0].status === 'passthrough') {
-            downloadPdf(outputFiles[0].result, outputFiles[0].file.name);
+            downloadBlob(outputFiles[0].result, outputFiles[0].file.name);
         } else if (outputFiles.length > 1) {
             await downloadAllAsZip(outputFiles);
         }
@@ -347,6 +450,8 @@
         if (msg.includes('End of data')) return 'Dosya bozuk — eksik veya tamamlanmamış arşiv.';
         if (msg.includes('TIFF')) return 'Geçerli bir TIFF dosyası değil veya dosya bozuk.';
         if (msg.includes('UTIF')) return 'TIFF dosyası işlenirken hata oluştu. Dosya formatını kontrol edin.';
+        if (msg.includes('docx')) return 'Word dönüştürme hatası: ' + msg;
+        if (msg.includes('Tesseract') || msg.includes('OCR')) return 'OCR işlemi başarısız: ' + msg;
         return 'Dönüştürme sırasında bir hata oluştu: ' + msg;
     }
 
@@ -367,12 +472,15 @@
         const contentEl = doc.querySelector('template > content');
         const rawText = contentEl ? contentEl.textContent : '';
 
+        // Page format with dimensions
         const pageFormat = doc.querySelector('pageFormat');
         const page = {
             leftMargin: parseFloat(pageFormat?.getAttribute('leftMargin') || '56.7'),
             rightMargin: parseFloat(pageFormat?.getAttribute('rightMargin') || '42.5'),
             topMargin: parseFloat(pageFormat?.getAttribute('topMargin') || '42.5'),
             bottomMargin: parseFloat(pageFormat?.getAttribute('bottomMargin') || '28.3'),
+            pageWidth: parseFloat(pageFormat?.getAttribute('pageWidth') || '0'),
+            pageHeight: parseFloat(pageFormat?.getAttribute('pageHeight') || '0'),
         };
 
         const PT_TO_MM = 0.3528;
@@ -380,6 +488,15 @@
         page.rightMm = page.rightMargin * PT_TO_MM;
         page.topMm = page.topMargin * PT_TO_MM;
         page.bottomMm = page.bottomMargin * PT_TO_MM;
+        page.widthMm = page.pageWidth > 0 ? page.pageWidth * PT_TO_MM : 210;
+        page.heightMm = page.pageHeight > 0 ? page.pageHeight * PT_TO_MM : 297;
+
+        // Detect orientation
+        if (page.widthMm > 0 && page.heightMm > 0 && page.widthMm > page.heightMm) {
+            page.orientation = 'landscape';
+        } else {
+            page.orientation = 'portrait';
+        }
 
         const styles = {};
         doc.querySelectorAll('styles > style').forEach(s => {
@@ -393,22 +510,33 @@
 
         const elements = doc.querySelector('elements');
         const paragraphs = [];
+        const headerParagraphs = [];
+        const footerParagraphs = [];
+        let headerStartPage = 1;
+        let footerStartPage = 1;
+        let footerPageNumber = null;
 
         if (elements) {
             for (const el of elements.children) {
                 if (el.tagName === 'paragraph') {
                     paragraphs.push(parseParagraph(el, rawText, styles));
                 } else if (el.tagName === 'header') {
+                    headerStartPage = parseInt(el.getAttribute('startPage') || '1');
                     for (const p of el.querySelectorAll('paragraph')) {
-                        const para = parseParagraph(p, rawText, styles);
-                        para.isHeader = true;
-                        paragraphs.push(para);
+                        headerParagraphs.push(parseParagraph(p, rawText, styles));
                     }
                 } else if (el.tagName === 'footer') {
+                    footerStartPage = parseInt(el.getAttribute('startPage') || '1');
+                    // Extract page number spec from footer element attributes
+                    const pageNumSpec = el.getAttribute('pageNumber-spec') || '';
+                    const pageNumSep = el.getAttribute('pageNumber-seperator') || el.getAttribute('pageNumber-separator') || '/';
+                    const pageNumSize = parseFloat(el.getAttribute('pageNumber-fontSize') || '0');
+                    const pageNumFont = el.getAttribute('pageNumber-fontFace') || '';
+                    if (pageNumSpec) {
+                        footerPageNumber = { spec: pageNumSpec, separator: pageNumSep, fontSize: pageNumSize, fontFace: pageNumFont };
+                    }
                     for (const p of el.querySelectorAll('paragraph')) {
-                        const para = parseParagraph(p, rawText, styles);
-                        para.isFooter = true;
-                        paragraphs.push(para);
+                        footerParagraphs.push(parseParagraph(p, rawText, styles));
                     }
                 } else if (el.tagName === 'table') {
                     paragraphs.push({ type: 'table', table: parseTable(el, rawText, styles) });
@@ -423,21 +551,224 @@
                     spaceAbove: 0, spaceBelow: 0,
                     leftIndent: 0, rightIndent: 0,
                     tabStops: [],
-                    runs: [{ text: line, bold: false, italic: false, underline: false, size: 12 }],
+                    listType: null, listLevel: 0,
+                    runs: [{ text: line, bold: false, italic: false, underline: false, size: 12, color: null }],
                 });
             });
         }
 
-        return { rawText, page, styles, paragraphs };
+        // Extract embedded images
+        const images = {};
+        for (const [path, entry] of Object.entries(zip.files)) {
+            if (entry.dir) continue;
+            const lowerPath = path.toLowerCase();
+            if (lowerPath.match(/\.(png|jpg|jpeg|gif|bmp)$/)) {
+                try {
+                    const imgData = await entry.async('base64');
+                    const ext = lowerPath.substring(lowerPath.lastIndexOf('.') + 1).replace('jpg', 'jpeg');
+                    images[path] = { data: imgData, format: ext.toUpperCase() };
+                } catch (e) { /* skip unreadable images */ }
+            }
+        }
+
+        // Parse image references from XML
+        const imageRefs = [];
+        doc.querySelectorAll('image, object, picture').forEach(imgEl => {
+            const src = imgEl.getAttribute('src') || imgEl.getAttribute('href') || imgEl.getAttribute('name') || '';
+            const width = parseFloat(imgEl.getAttribute('width') || '0') * PT_TO_MM;
+            const height = parseFloat(imgEl.getAttribute('height') || '0') * PT_TO_MM;
+            if (src && images[src]) {
+                imageRefs.push({ src, width, height, imageData: images[src] });
+            }
+        });
+
+        // Parse signature info
+        const signatureInfo = await parseSignatures(zip);
+
+        return { rawText, page, styles, paragraphs, headerParagraphs, footerParagraphs, headerStartPage, footerStartPage, footerPageNumber, images, imageRefs, signatureInfo };
+    }
+
+    async function parseSignatures(zip) {
+        // Try sign.sgn first (PKCS#7/CMS binary format — real UDF files use this)
+        const signFile = zip.file('sign.sgn');
+        if (signFile) {
+            try {
+                const buf = await signFile.async('arraybuffer');
+                const sigInfo = parsePkcs7Signature(new Uint8Array(buf));
+                if (sigInfo) return sigInfo;
+            } catch (e) { /* fall through to XML */ }
+        }
+
+        // Fallback: try XML signature files
+        const sigPaths = ['signatures.xml', 'META-INF/signatures.xml', 'meta-inf/signatures.xml'];
+        let sigXml = null;
+
+        for (const path of sigPaths) {
+            const f = zip.file(path);
+            if (f) {
+                try {
+                    sigXml = await f.async('string');
+                    break;
+                } catch (e) { /* skip */ }
+            }
+        }
+
+        if (!sigXml) {
+            for (const [path, entry] of Object.entries(zip.files)) {
+                if (!entry.dir && path.toLowerCase().includes('signature') && path.toLowerCase().endsWith('.xml')) {
+                    try {
+                        sigXml = await entry.async('string');
+                        break;
+                    } catch (e) { /* skip */ }
+                }
+            }
+        }
+
+        if (!sigXml) return null;
+
+        try {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(sigXml, 'text/xml');
+            const signatures = [];
+
+            const sigNodes = doc.querySelectorAll('Signature, signature, SignatureInfo, signatureInfo');
+            for (const node of sigNodes) {
+                const name = node.getAttribute('signerName') || node.getAttribute('name') ||
+                    node.querySelector('SignerName, signerName, Name, name')?.textContent || '';
+                const institution = node.getAttribute('institution') || node.getAttribute('organization') ||
+                    node.querySelector('Institution, institution, Organization, organization')?.textContent || '';
+                const date = node.getAttribute('signDate') || node.getAttribute('date') ||
+                    node.querySelector('SignDate, signDate, Date, date')?.textContent || '';
+                const title = node.getAttribute('title') ||
+                    node.querySelector('Title, title')?.textContent || '';
+
+                if (name || institution || date) {
+                    signatures.push({ name, institution, date, title });
+                }
+            }
+
+            if (signatures.length === 0) return null;
+
+            return signatures.map(s => {
+                const parts = [];
+                if (s.name) parts.push(s.name);
+                if (s.title) parts.push(`(${s.title})`);
+                if (s.institution) parts.push(`- ${s.institution}`);
+                if (s.date) parts.push(`[${s.date}]`);
+                return parts.join(' ');
+            }).join(' | ');
+        } catch (e) {
+            return null;
+        }
+    }
+
+    // Extract signer info from PKCS#7/CMS binary by finding X.509 certificate fields
+    function parsePkcs7Signature(bytes) {
+        // Extract readable UTF-8/ASCII strings from the binary
+        // Look for common X.509 Distinguished Name OID patterns
+        const text = extractReadableStrings(bytes);
+
+        // Parse CN (Common Name), OU (Organizational Unit), O (Organization), L (Locality)
+        const fields = {};
+
+        // Try to find OID-prefixed fields in DER encoding
+        // OID 2.5.4.3 = CN (55 04 03), OID 2.5.4.10 = O (55 04 0A), OID 2.5.4.11 = OU (55 04 0B)
+        // OID 2.5.4.7 = L (55 04 07), OID 2.5.4.5 = serialNumber (55 04 05)
+        const oidMap = {
+            cn: [0x55, 0x04, 0x03],
+            serialNumber: [0x55, 0x04, 0x05],
+            l: [0x55, 0x04, 0x07],
+            o: [0x55, 0x04, 0x0A],
+            ou: [0x55, 0x04, 0x0B],
+        };
+
+        for (const [fieldName, oid] of Object.entries(oidMap)) {
+            fields[fieldName] = findOidValues(bytes, oid);
+        }
+
+        // Filter out CA certificate entries — signer CN is the one that doesn't contain CA keywords
+        const caKeywords = ['TÜRKTRUST', 'TBB-', 'Bilgi İletişim', 'Elektronik Sertifika', 'Dayanak'];
+        const isCA = (str) => caKeywords.some(kw => str.includes(kw));
+
+        const signerCN = (fields.cn || []).find(v => !isCA(v)) || '';
+        const signerOU = (fields.ou || []).find(v => !isCA(v)) || '';
+        const signerL = (fields.l || []).find(v => {
+            // Signer's location is usually different from Ankara (CA location)
+            // If multiple values, prefer non-Ankara
+            return true;
+        }) || '';
+        // Find signer's location — prefer values that aren't the CA's location
+        const signerLoc = (fields.l || []).length > 1
+            ? ((fields.l || []).find(v => v !== 'Ankara') || (fields.l || [])[0])
+            : (fields.l || [])[0] || '';
+
+        if (!signerCN) return null;
+
+        const parts = [];
+        parts.push(signerCN);
+        if (signerOU) parts.push(`(${signerOU})`);
+        if (signerLoc) parts.push(`[${signerLoc}]`);
+        return parts.join(' ');
+    }
+
+    // Find string values following an OID in DER-encoded ASN.1
+    function findOidValues(bytes, oid) {
+        const results = [];
+        for (let i = 0; i < bytes.length - oid.length - 4; i++) {
+            let match = true;
+            for (let j = 0; j < oid.length; j++) {
+                if (bytes[i + j] !== oid[j]) { match = false; break; }
+            }
+            if (!match) continue;
+
+            // After OID, expect a string type tag (UTF8String=0x0C, PrintableString=0x13, IA5String=0x16)
+            // with a length byte, then the string data
+            let pos = i + oid.length;
+            // Skip possible NULL or wrapper bytes
+            while (pos < bytes.length && pos < i + oid.length + 4) {
+                const tag = bytes[pos];
+                if (tag === 0x0C || tag === 0x13 || tag === 0x16) {
+                    const len = bytes[pos + 1];
+                    if (len > 0 && len < 200 && pos + 2 + len <= bytes.length) {
+                        try {
+                            const strBytes = bytes.slice(pos + 2, pos + 2 + len);
+                            const str = tag === 0x0C
+                                ? new TextDecoder('utf-8').decode(strBytes)
+                                : String.fromCharCode(...strBytes);
+                            if (str.trim()) results.push(str.trim());
+                        } catch (e) { /* skip */ }
+                    }
+                    break;
+                }
+                pos++;
+            }
+        }
+        return results;
+    }
+
+    // Extract readable ASCII/UTF-8 strings from binary data
+    function extractReadableStrings(bytes) {
+        const strings = [];
+        let current = '';
+        for (let i = 0; i < bytes.length; i++) {
+            const b = bytes[i];
+            if (b >= 32 && b < 127) {
+                current += String.fromCharCode(b);
+            } else {
+                if (current.length >= 4) strings.push(current);
+                current = '';
+            }
+        }
+        if (current.length >= 4) strings.push(current);
+        return strings.join(' ');
     }
 
     function parseTabStops(tabSetStr) {
         if (!tabSetStr) return [];
-        // TabSet format: "pos:align:leader" or "pos:align:leader,pos2:align2:leader2"
         return tabSetStr.split(',').map(entry => {
             const parts = entry.split(':');
             return {
-                position: parseFloat(parts[0] || '0') * 0.3528, // pt to mm
+                position: parseFloat(parts[0] || '0') * 0.3528,
                 alignment: parseInt(parts[1] || '0'),
             };
         });
@@ -454,6 +785,16 @@
         const resolver = el.getAttribute('resolver') || 'default';
         const baseStyle = styles[resolver] || styles['hvl-default'] || styles['default'] || {};
 
+        // List support — UDF uses Numbered="true", ListLevel, ListId, SecListTypeLevel1
+        const numbered = el.getAttribute('Numbered') === 'true';
+        const listLevel = parseInt(el.getAttribute('ListLevel') || el.getAttribute('listLevel') || '0');
+        const listIndex = parseInt(el.getAttribute('ListId') || el.getAttribute('listId') || el.getAttribute('listIndex') || el.getAttribute('ListIndex') || '0');
+        const secListType = el.getAttribute('SecListTypeLevel1') || '';
+        const numberType = el.getAttribute('NumberType') || '';
+        const listType = numbered
+            ? ((secListType.includes('NUMBER') || numberType) ? 'number' : 'bullet')
+            : (el.getAttribute('listType') || el.getAttribute('ListType') || null);
+
         const runs = [];
         for (const child of el.children) {
             const startOffset = parseInt(child.getAttribute('startOffset') || '0');
@@ -465,14 +806,21 @@
             const underline = child.getAttribute('underline') === 'true';
             const size = parseFloat(child.getAttribute('size') || baseStyle.size || '12');
 
+            // Color support
+            const colorStr = child.getAttribute('foreground') || child.getAttribute('color') || child.getAttribute('Foreground') || child.getAttribute('Color') || '';
+            const color = parseColor(colorStr);
+
             if (child.tagName === 'tab') {
-                runs.push({ text: '\t', bold, italic, underline, size });
+                runs.push({ text: '\t', bold, italic, underline, size, color });
+            } else if (child.tagName === 'content' || child.tagName === 'field' || child.tagName === 'space') {
+                runs.push({ text, bold, italic, underline, size, color });
             } else {
-                runs.push({ text, bold, italic, underline, size });
+                // Unknown element — still try to extract text
+                runs.push({ text, bold, italic, underline, size, color });
             }
         }
 
-        return { alignment, spaceAbove, spaceBelow, leftIndent, rightIndent, tabStops, runs };
+        return { alignment, spaceAbove, spaceBelow, leftIndent, rightIndent, tabStops, runs, listType, listLevel, listIndex };
     }
 
     function parseTable(tableEl, rawText, styles) {
@@ -484,7 +832,9 @@
                 for (const pEl of cellEl.querySelectorAll(':scope > paragraph')) {
                     cellParagraphs.push(parseParagraph(pEl, rawText, styles));
                 }
-                cells.push({ paragraphs: cellParagraphs });
+                const colspan = parseInt(cellEl.getAttribute('colspan') || cellEl.getAttribute('colSpan') || cellEl.getAttribute('ColumnSpan') || '1');
+                const rowspan = parseInt(cellEl.getAttribute('rowspan') || cellEl.getAttribute('rowSpan') || cellEl.getAttribute('RowSpan') || '1');
+                cells.push({ paragraphs: cellParagraphs, colspan, rowspan });
             }
             rows.push({ cells });
         }
@@ -493,13 +843,16 @@
 
     // ── PDF Generation ──
     const PT_TO_MM = 0.3528;
-    const PAGE_W = 210;
-    const PAGE_H = 297;
     const DEFAULT_TAB_MM = 15;
 
     async function convertUdfToPdf(file) {
         const udf = await parseUdf(file);
         const pg = udf.page;
+
+        // Landscape support
+        const isLandscape = pg.orientation === 'landscape';
+        const PAGE_W = isLandscape ? 297 : 210;
+        const PAGE_H = isLandscape ? 210 : 297;
 
         const leftM = Math.max(pg.leftMm, 10);
         const rightM = Math.max(pg.rightMm, 10);
@@ -507,15 +860,72 @@
         const bottomM = Math.max(pg.bottomMm, 10);
         const usableW = PAGE_W - leftM - rightM;
 
-        const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+        const orientation = isLandscape ? 'landscape' : 'portrait';
+        const doc = new jsPDF({ orientation, unit: 'mm', format: 'a4' });
         registerFonts(doc);
 
         let curY = topM;
-        let tabIndex = 0; // Tracks which tab stop to use next in a line
+
+        // Header/Footer rendering helpers
+        function renderHeaderContent() {
+            if (udf.headerParagraphs.length === 0) return;
+            if (pageCount < udf.headerStartPage) return; // startPage desteği
+            const savedY = curY;
+            curY = 6; // Start headers at 6mm from top
+            for (const para of udf.headerParagraphs) {
+                renderParagraphInArea(para, leftM, rightM, PAGE_W, 4, topM - 2);
+            }
+            curY = savedY;
+        }
+
+        function renderFooterContent(pageNum, totalPages) {
+            if (pageCount < udf.footerStartPage) return; // startPage desteği
+            const savedY = curY;
+            curY = PAGE_H - bottomM + 2;
+
+            // Render footer paragraphs with page number placeholders
+            if (udf.footerParagraphs.length > 0) {
+                for (const para of udf.footerParagraphs) {
+                    const processedPara = {
+                        ...para,
+                        runs: para.runs.map(r => ({
+                            ...r,
+                            text: r.text
+                                .replace(/\{PAGE\}/gi, String(pageNum))
+                                .replace(/\{PAGES\}/gi, String(totalPages))
+                                .replace(/\{page\}/g, String(pageNum))
+                                .replace(/\{pages\}/g, String(totalPages))
+                        }))
+                    };
+                    renderParagraphInArea(processedPara, leftM, rightM, PAGE_W, PAGE_H - bottomM + 2, PAGE_H - 4);
+                }
+            }
+
+            // Render page number from footer element attributes (pageNumber-spec)
+            if (udf.footerPageNumber) {
+                const sep = udf.footerPageNumber.separator;
+                const pageText = pageNum + sep + totalPages;
+                const fontSize = udf.footerPageNumber.fontSize || 9;
+                doc.setFont('NotoSerif', 'normal');
+                doc.setFontSize(fontSize);
+                doc.setTextColor(0, 0, 0);
+                const textW = doc.getStringUnitWidth(pageText) * fontSize * PT_TO_MM;
+                doc.text(pageText, PAGE_W / 2 - textW / 2, PAGE_H - 4);
+            }
+
+            curY = savedY;
+        }
+
+        let pageCount = 1;
+
+        // Render header on first page
+        renderHeaderContent();
 
         function newPage() {
             doc.addPage();
+            pageCount++;
             curY = topM;
+            renderHeaderContent();
         }
 
         function setRunFont(run) {
@@ -527,12 +937,19 @@
             doc.setFontSize(run.size);
         }
 
+        function setRunColor(run) {
+            if (run.color) {
+                doc.setTextColor(run.color.r, run.color.g, run.color.b);
+            } else {
+                doc.setTextColor(0, 0, 0);
+            }
+        }
+
         function getTextWidth(text, run) {
             setRunFont(run);
             return doc.getStringUnitWidth(text) * run.size * PT_TO_MM;
         }
 
-        // Word-wrap runs into lines, handling tabs with tab stops
         function wrapParagraph(runs, maxWidth, tabStops, pLeftIndent) {
             const lines = [];
             let currentLine = { segments: [], width: 0, height: 0 };
@@ -542,12 +959,11 @@
                 const sizeMm = run.size * PT_TO_MM;
 
                 if (run.text === '\t') {
-                    // Calculate tab width based on tab stops
                     let tabW = DEFAULT_TAB_MM;
                     if (tabStops.length > 0 && currentTabIdx < tabStops.length) {
                         const targetPos = tabStops[currentTabIdx].position;
                         const currentPos = currentLine.width;
-                        tabW = Math.max(targetPos - currentPos, 4); // At least 4mm
+                        tabW = Math.max(targetPos - currentPos, 4);
                         currentTabIdx++;
                     }
                     currentLine.segments.push({ text: '', width: tabW, ...run });
@@ -573,6 +989,7 @@
                         text: part, width: partW,
                         bold: run.bold, italic: run.italic,
                         underline: run.underline, size: run.size,
+                        color: run.color,
                     });
                     currentLine.width += partW;
                     currentLine.height = Math.max(currentLine.height, sizeMm);
@@ -592,13 +1009,31 @@
         }
 
         function renderParagraph(para) {
-            const pLeftIndent = leftM + para.leftIndent * PT_TO_MM;
+            const listIndent = para.listType ? (para.listLevel + 1) * 5 : 0;
+            const pLeftIndent = leftM + para.leftIndent * PT_TO_MM + listIndent;
             const pRightIndent = rightM + para.rightIndent * PT_TO_MM;
             const paraW = PAGE_W - pLeftIndent - pRightIndent;
 
             curY += para.spaceAbove * PT_TO_MM;
 
-            const lines = wrapParagraph(para.runs, paraW, para.tabStops || [], pLeftIndent);
+            // Add list marker to runs if it's a list item
+            let runs = para.runs;
+            if (para.listType) {
+                const marker = getListMarker(para.listType, para.listLevel, para.listIndex);
+                if (marker) {
+                    const markerRun = {
+                        text: marker,
+                        bold: false,
+                        italic: false,
+                        underline: false,
+                        size: runs[0]?.size || 12,
+                        color: null,
+                    };
+                    runs = [markerRun, ...runs];
+                }
+            }
+
+            const lines = wrapParagraph(runs, paraW, para.tabStops || [], pLeftIndent);
             const isJustify = para.alignment === 3;
 
             for (let li = 0; li < lines.length; li++) {
@@ -613,14 +1048,11 @@
                 let xStart = pLeftIndent;
 
                 if (para.alignment === 1) {
-                    // Center
                     xStart = pLeftIndent + (paraW - line.width) / 2;
                 } else if (para.alignment === 2) {
-                    // Right
                     xStart = pLeftIndent + paraW - line.width;
                 }
 
-                // Justify: distribute extra space between words (not on last line)
                 let extraSpacePerGap = 0;
                 if (isJustify && !isLastLine && line.width < paraW) {
                     const gaps = line.segments.filter(s => s.text && /^\s+$/.test(s.text)).length;
@@ -632,13 +1064,15 @@
                 let runX = xStart;
                 for (const seg of line.segments) {
                     setRunFont(seg);
+                    setRunColor(seg);
 
                     if (seg.text) {
                         doc.text(seg.text, runX, curY + lineH * 0.7);
 
                         if (seg.underline) {
                             const textW = getTextWidth(seg.text, seg);
-                            doc.setDrawColor(0, 0, 0);
+                            const c = seg.color || { r: 0, g: 0, b: 0 };
+                            doc.setDrawColor(c.r, c.g, c.b);
                             doc.setLineWidth(0.15);
                             doc.line(runX, curY + lineH * 0.75, runX + textW, curY + lineH * 0.75);
                         }
@@ -646,63 +1080,137 @@
 
                     runX += seg.width;
 
-                    // Add extra space after whitespace segments for justify
                     if (isJustify && !isLastLine && seg.text && /^\s+$/.test(seg.text)) {
                         runX += extraSpacePerGap;
                     }
                 }
 
+                // Reset to black
+                doc.setTextColor(0, 0, 0);
                 curY += lineH;
             }
 
             curY += para.spaceBelow * PT_TO_MM;
         }
 
+        // Simplified paragraph rendering for header/footer areas
+        function renderParagraphInArea(para, lMargin, rMargin, pageW, minY, maxY) {
+            const pLeftIndent = lMargin + para.leftIndent * PT_TO_MM;
+            const pRightIndent = rMargin + para.rightIndent * PT_TO_MM;
+            const paraW = pageW - pLeftIndent - pRightIndent;
+            const runs = para.runs;
+
+            const text = runs.map(r => r.text).join('');
+            if (!text.trim()) return;
+
+            const firstRun = runs[0] || { bold: false, italic: false, size: 9, color: null };
+            const fontSize = Math.min(firstRun.size, 10); // Cap header/footer font size
+            setRunFont({ ...firstRun, size: fontSize });
+            setRunColor(firstRun);
+
+            const sizeMm = fontSize * PT_TO_MM;
+            const lineH = sizeMm * 1.4;
+
+            if (curY + lineH > maxY) return;
+
+            let xStart = pLeftIndent;
+            const textW = doc.getStringUnitWidth(text) * fontSize * PT_TO_MM;
+
+            if (para.alignment === 1) {
+                xStart = pLeftIndent + (paraW - textW) / 2;
+            } else if (para.alignment === 2) {
+                xStart = pLeftIndent + paraW - textW;
+            }
+
+            doc.setFontSize(fontSize);
+            doc.text(text, xStart, curY + lineH * 0.7);
+            curY += lineH;
+
+            doc.setTextColor(0, 0, 0);
+        }
+
         function renderTable(tableRows) {
             if (!tableRows || tableRows.length === 0) return;
 
-            const maxCols = Math.max(...tableRows.map(r => r.cells.length));
+            // Calculate effective column count considering colspan
+            const maxCols = Math.max(...tableRows.map(r => {
+                let cols = 0;
+                for (const cell of r.cells) cols += (cell.colspan || 1);
+                return cols;
+            }));
             const colW = usableW / maxCols;
 
-            for (const row of tableRows) {
+            // Track rowspan occupancy
+            const spanMap = []; // spanMap[rowIdx][colIdx] = true if occupied by rowspan
+
+            for (let ri = 0; ri < tableRows.length; ri++) {
+                const row = tableRows[ri];
+                if (!spanMap[ri]) spanMap[ri] = {};
+
                 let rowH = 6;
+                let colIdx = 0;
+
+                // Calculate row height
                 for (const cell of row.cells) {
+                    while (spanMap[ri][colIdx]) colIdx++;
+                    const cellSpan = cell.colspan || 1;
+
                     let cellH = 2;
                     for (const p of cell.paragraphs) {
                         const text = p.runs.map(r => r.text).join('');
                         const size = p.runs[0]?.size || 12;
                         const sizeMm = size * PT_TO_MM;
                         setRunFont(p.runs[0] || { bold: false, italic: false, size: 12 });
-                        const splitLines = doc.splitTextToSize(text, colW - 4);
+                        const splitLines = doc.splitTextToSize(text, colW * cellSpan - 4);
                         cellH += splitLines.length * sizeMm * 1.5;
                     }
                     rowH = Math.max(rowH, cellH + 2);
+
+                    // Mark rowspan cells
+                    const rs = cell.rowspan || 1;
+                    for (let dr = 0; dr < rs; dr++) {
+                        if (!spanMap[ri + dr]) spanMap[ri + dr] = {};
+                        for (let dc = 0; dc < cellSpan; dc++) {
+                            if (dr > 0) spanMap[ri + dr][colIdx + dc] = true;
+                        }
+                    }
+
+                    colIdx += cellSpan;
                 }
 
                 if (curY + rowH > PAGE_H - bottomM) {
                     newPage();
                 }
 
-                row.cells.forEach((cell, ci) => {
-                    const cellX = leftM + ci * colW;
+                colIdx = 0;
+                row.cells.forEach((cell) => {
+                    while (spanMap[ri][colIdx]) colIdx++;
+
+                    const cellSpan = cell.colspan || 1;
+                    const cellWidth = colW * cellSpan;
+                    const cellX = leftM + colIdx * colW;
 
                     doc.setDrawColor(180, 180, 180);
                     doc.setLineWidth(0.3);
-                    doc.rect(cellX, curY, colW, rowH);
+                    doc.rect(cellX, curY, cellWidth, rowH);
 
                     let cellY = curY + 2;
                     for (const p of cell.paragraphs) {
                         const text = p.runs.map(r => r.text).join('');
-                        const run = p.runs[0] || { bold: false, italic: false, size: 12 };
+                        const run = p.runs[0] || { bold: false, italic: false, size: 12, color: null };
                         setRunFont(run);
+                        setRunColor(run);
                         const sizeMm = run.size * PT_TO_MM;
 
-                        const splitLines = doc.splitTextToSize(text, colW - 4);
+                        const splitLines = doc.splitTextToSize(text, cellWidth - 4);
                         for (const ln of splitLines) {
                             doc.text(ln, cellX + 2, cellY + sizeMm);
                             cellY += sizeMm * 1.5;
                         }
                     }
+                    doc.setTextColor(0, 0, 0);
+
+                    colIdx += cellSpan;
                 });
 
                 curY += rowH;
@@ -711,9 +1219,31 @@
             curY += 2;
         }
 
-        for (const para of udf.paragraphs) {
-            if (para.isHeader || para.isFooter) continue;
+        // Render embedded images inline
+        function renderImageRef(imgRef) {
+            if (!imgRef.imageData) return;
+            const w = imgRef.width || 60;
+            const h = imgRef.height || 40;
 
+            if (curY + h > PAGE_H - bottomM) {
+                newPage();
+            }
+
+            try {
+                doc.addImage(
+                    'data:image/' + imgRef.imageData.format.toLowerCase() + ';base64,' + imgRef.imageData.data,
+                    imgRef.imageData.format,
+                    leftM, curY, w, h
+                );
+                curY += h + 2;
+            } catch (e) {
+                console.warn('Image render failed:', e);
+            }
+        }
+
+        // Main rendering loop
+        let imageRefIdx = 0;
+        for (const para of udf.paragraphs) {
             if (para.type === 'table') {
                 renderTable(para.table);
                 continue;
@@ -722,32 +1252,618 @@
             renderParagraph(para);
         }
 
-        return doc.output('blob');
+        // Render any remaining image refs
+        for (const imgRef of udf.imageRefs) {
+            renderImageRef(imgRef);
+        }
+
+        // Render footers on all pages
+        const totalPages = pageCount;
+        for (let p = 1; p <= totalPages; p++) {
+            doc.setPage(p);
+            renderFooterContent(p, totalPages);
+        }
+
+        const blob = doc.output('blob');
+        return { blob, signatureInfo: udf.signatureInfo };
+    }
+
+    // ── Word (.docx) Export ──
+    async function convertUdfToDocx(file) {
+        if (!window.docx) {
+            throw new Error('docx kütüphanesi yüklenemedi. Sayfa yeniden yüklenmelidir.');
+        }
+
+        const udf = await parseUdf(file);
+        const { Document, Paragraph, TextRun, Table, TableRow, TableCell, HeadingLevel, AlignmentType, Packer, WidthType, BorderStyle, Header, Footer, PageNumber } = window.docx;
+
+        // Map alignment
+        function mapAlignment(a) {
+            if (a === 1) return AlignmentType.CENTER;
+            if (a === 2) return AlignmentType.RIGHT;
+            if (a === 3) return AlignmentType.JUSTIFIED;
+            return AlignmentType.LEFT;
+        }
+
+        // Convert color to hex
+        function colorToHex(c) {
+            if (!c) return undefined;
+            return ((1 << 24) + (c.r << 16) + (c.g << 8) + c.b).toString(16).slice(1).toUpperCase();
+        }
+
+        // Build header paragraphs for docx
+        const headerChildren = udf.headerParagraphs.map(para => {
+            const runs = para.runs.map(r => new TextRun({
+                text: r.text === '\t' ? '\t' : r.text,
+                bold: r.bold,
+                italics: r.italic,
+                underline: r.underline ? {} : undefined,
+                size: r.size * 2,
+                color: colorToHex(r.color),
+                font: 'Noto Serif',
+            }));
+            return new Paragraph({ children: runs, alignment: mapAlignment(para.alignment) });
+        });
+
+        // Build footer paragraphs for docx
+        const footerChildren = udf.footerParagraphs.map(para => {
+            const runs = para.runs.map(r => {
+                if (r.text.match(/\{PAGE\}/i)) {
+                    return new TextRun({ children: [PageNumber.CURRENT], font: 'Noto Serif', size: r.size * 2 });
+                }
+                return new TextRun({
+                    text: r.text === '\t' ? '\t' : r.text,
+                    bold: r.bold,
+                    italics: r.italic,
+                    size: r.size * 2,
+                    font: 'Noto Serif',
+                });
+            });
+            return new Paragraph({ children: runs, alignment: mapAlignment(para.alignment) });
+        });
+
+        // Build body content
+        const children = [];
+
+        for (const para of udf.paragraphs) {
+            if (para.type === 'table') {
+                // Build table
+                try {
+                    const tableRows = para.table.map(row => {
+                        const cells = row.cells.map(cell => {
+                            const cellParas = cell.paragraphs.map(cp => {
+                                const runs = cp.runs.map(r => new TextRun({
+                                    text: r.text === '\t' ? '\t' : r.text,
+                                    bold: r.bold,
+                                    italics: r.italic,
+                                    underline: r.underline ? {} : undefined,
+                                    size: r.size * 2,
+                                    color: colorToHex(r.color),
+                                    font: 'Noto Serif',
+                                }));
+                                return new Paragraph({ children: runs, alignment: mapAlignment(cp.alignment) });
+                            });
+                            return new TableCell({
+                                children: cellParas.length > 0 ? cellParas : [new Paragraph('')],
+                                columnSpan: cell.colspan || 1,
+                                rowSpan: cell.rowspan || 1,
+                            });
+                        });
+                        return new TableRow({ children: cells });
+                    });
+
+                    if (tableRows.length > 0) {
+                        children.push(new Table({ rows: tableRows }));
+                    }
+                } catch (e) {
+                    console.warn('Table conversion failed:', e);
+                }
+                continue;
+            }
+
+            // Build paragraph
+            const listMarker = para.listType ? getListMarker(para.listType, para.listLevel, para.listIndex) : '';
+            const runs = [];
+
+            if (listMarker) {
+                runs.push(new TextRun({ text: listMarker, font: 'Noto Serif', size: (para.runs[0]?.size || 12) * 2 }));
+            }
+
+            for (const r of para.runs) {
+                runs.push(new TextRun({
+                    text: r.text === '\t' ? '\t' : r.text,
+                    bold: r.bold,
+                    italics: r.italic,
+                    underline: r.underline ? {} : undefined,
+                    size: r.size * 2,
+                    color: colorToHex(r.color),
+                    font: 'Noto Serif',
+                }));
+            }
+
+            children.push(new Paragraph({
+                children: runs,
+                alignment: mapAlignment(para.alignment),
+                spacing: {
+                    before: Math.round(para.spaceAbove * 20),
+                    after: Math.round(para.spaceBelow * 20),
+                },
+                indent: {
+                    left: Math.round(para.leftIndent * 20 + (para.listType ? (para.listLevel + 1) * 200 : 0)),
+                    right: Math.round(para.rightIndent * 20),
+                },
+            }));
+        }
+
+        // Determine page orientation
+        const isLandscape = udf.page.orientation === 'landscape';
+
+        const docConfig = {
+            sections: [{
+                properties: {
+                    page: {
+                        size: isLandscape
+                            ? { width: 16838, height: 11906, orientation: 'landscape' }
+                            : { width: 11906, height: 16838 },
+                        margin: {
+                            top: Math.round(udf.page.topMm / 25.4 * 1440),
+                            bottom: Math.round(udf.page.bottomMm / 25.4 * 1440),
+                            left: Math.round(udf.page.leftMm / 25.4 * 1440),
+                            right: Math.round(udf.page.rightMm / 25.4 * 1440),
+                        },
+                    },
+                },
+                headers: headerChildren.length > 0 ? {
+                    default: new Header({ children: headerChildren }),
+                } : undefined,
+                footers: footerChildren.length > 0 ? {
+                    default: new Footer({ children: footerChildren }),
+                } : undefined,
+                children,
+            }],
+        };
+
+        const document = new Document(docConfig);
+        const blob = await Packer.toBlob(document);
+        return { blob, signatureInfo: udf.signatureInfo };
+    }
+
+    // List marker helper (shared between PDF and DOCX)
+    function getListMarker(listType, listLevel, listIndex) {
+        if (!listType) return '';
+        const bullets = ['\u2022', '\u25E6', '\u25AA', '\u2013'];
+        if (listType === 'bullet' || listType === 'unordered') {
+            return bullets[Math.min(listLevel, bullets.length - 1)] + ' ';
+        }
+        if (listType === 'number' || listType === 'ordered' || listType === 'decimal') {
+            return (listIndex || 1) + '. ';
+        }
+        if (listType === 'letter') {
+            return String.fromCharCode(97 + ((listIndex || 1) - 1) % 26) + ') ';
+        }
+        if (listType === 'roman') {
+            const romans = ['i', 'ii', 'iii', 'iv', 'v', 'vi', 'vii', 'viii', 'ix', 'x'];
+            return (romans[(listIndex || 1) - 1] || listIndex) + ') ';
+        }
+        return '\u2022 ';
     }
 
     // ── TIFF to PDF Conversion ──
-    const MAX_TIFF_DIMENSION = 10000; // px
-    const MAX_TIFF_PIXELS = 100_000_000; // 100MP
+    const MAX_TIFF_DIMENSION = 10000;
+    const MAX_TIFF_PIXELS = 100_000_000;
 
-    async function convertTiffToPdf(file) {
+    // ── CCITT Group 4 (T.6) Fax Decoder for 1-bit TIFF ──
+    function decodeCCITTG4(data, width, height, fillOrder) {
+        const out = new Uint8Array(width * height);
+        const reader = { data, pos: 0, bit: 0 };
+
+        function readBit() {
+            if (reader.pos >= reader.data.length) return 0;
+            const byte = reader.data[reader.pos];
+            let b;
+            if (fillOrder === 2) {
+                b = (byte >> reader.bit) & 1;
+            } else {
+                b = (byte >> (7 - reader.bit)) & 1;
+            }
+            reader.bit++;
+            if (reader.bit >= 8) { reader.bit = 0; reader.pos++; }
+            return b;
+        }
+
+        // Huffman code tables for CCITT G4
+        // White run-length codes
+        const WHITE_TERMINAL = [
+            [0b00110101, 8], [0b000111, 6], [0b0111, 4], [0b1000, 4],
+            [0b1011, 4], [0b1100, 4], [0b1110, 4], [0b1111, 4],
+            [0b10011, 5], [0b10100, 5], [0b00111, 5], [0b01000, 5],
+            [0b001000, 6], [0b000011, 6], [0b110100, 6], [0b110101, 6],
+            [0b101010, 6], [0b101011, 6], [0b0100111, 7], [0b0001100, 7],
+            [0b0001000, 7], [0b0010111, 7], [0b0000011, 7], [0b0000100, 7],
+            [0b0101000, 7], [0b0101011, 7], [0b0010011, 7], [0b0100100, 7],
+            [0b0011000, 7], [0b00000010, 8], [0b00000011, 8], [0b00011010, 8],
+            [0b00011011, 8], [0b00010010, 8], [0b00010011, 8], [0b00010100, 8],
+            [0b00010101, 8], [0b00010110, 8], [0b00010111, 8], [0b00101000, 8],
+            [0b00101001, 8], [0b00101010, 8], [0b00101011, 8], [0b00101100, 8],
+            [0b00101101, 8], [0b00000100, 8], [0b00000101, 8], [0b00001010, 8],
+            [0b00001011, 8], [0b01010010, 8], [0b01010011, 8], [0b01010100, 8],
+            [0b01010101, 8], [0b00100100, 8], [0b00100101, 8], [0b01011000, 8],
+            [0b01011001, 8], [0b01011010, 8], [0b01011011, 8], [0b01001010, 8],
+            [0b01001011, 8], [0b00110010, 8], [0b00110011, 8], [0b00110100, 8],
+        ];
+        const WHITE_MAKEUP = [
+            [0b11011, 5, 64], [0b10010, 5, 128], [0b010111, 6, 192], [0b0110111, 7, 256],
+            [0b00110110, 8, 320], [0b00110111, 8, 384], [0b01100100, 8, 448], [0b01100101, 8, 512],
+            [0b01101000, 8, 576], [0b01100111, 8, 640], [0b011001100, 9, 704], [0b011001101, 9, 768],
+            [0b011010010, 9, 832], [0b011010011, 9, 896], [0b011010100, 9, 960], [0b011010101, 9, 1024],
+            [0b011010110, 9, 1088], [0b011010111, 9, 1152], [0b011011000, 9, 1216], [0b011011001, 9, 1280],
+            [0b011011010, 9, 1344], [0b011011011, 9, 1408], [0b010011000, 9, 1472], [0b010011001, 9, 1536],
+            [0b010011010, 9, 1600], [0b011000, 6, 1664], [0b010011011, 9, 1728],
+        ];
+        const BLACK_TERMINAL = [
+            [0b0000110111, 10], [0b010, 3], [0b11, 2], [0b10, 2],
+            [0b011, 3], [0b0011, 4], [0b0010, 4], [0b00011, 5],
+            [0b000101, 6], [0b000100, 6], [0b0000100, 7], [0b0000101, 7],
+            [0b0000111, 7], [0b00000100, 8], [0b00000111, 8], [0b000011000, 9],
+            [0b0000010111, 10], [0b0000011000, 10], [0b0000001000, 10], [0b00001100111, 11],
+            [0b00001101000, 11], [0b00001101100, 11], [0b00000110111, 11], [0b00000101000, 11],
+            [0b00000010111, 11], [0b00000011000, 11], [0b000011001010, 12], [0b000011001011, 12],
+            [0b000011001100, 12], [0b000011001101, 12], [0b000001101000, 12], [0b000001101001, 12],
+            [0b000011010010, 12], [0b000011010011, 12], [0b000011010100, 12], [0b000011010101, 12],
+            [0b000011010110, 12], [0b000011010111, 12], [0b000001101010, 12], [0b000001101011, 12],
+            [0b000011011000, 12], [0b000011011001, 12], [0b000011011010, 12], [0b000011011011, 12],
+            [0b000001010010, 12], [0b000001010011, 12], [0b000000100100, 12], [0b000000110111, 12],
+            [0b000000111000, 12], [0b000000100111, 12], [0b000000101000, 12], [0b000001011000, 12],
+            [0b000001011001, 12], [0b000000101011, 12], [0b000000101100, 12], [0b000001011010, 12],
+            [0b000001100110, 12], [0b000001100111, 12], [0b000001010100, 12], [0b000001010101, 12],
+            [0b000001010110, 12], [0b000001010111, 12], [0b000001100100, 12], [0b000001100101, 12],
+        ];
+        const BLACK_MAKEUP = [
+            [0b0000001111, 10, 64], [0b000011001000, 12, 128], [0b000011001001, 12, 192],
+            [0b000001011011, 12, 256], [0b000000110011, 12, 320], [0b000000110100, 12, 384],
+            [0b000000110101, 12, 448], [0b0000001101100, 13, 512], [0b0000001101101, 13, 576],
+            [0b0000001001010, 13, 640], [0b0000001001011, 13, 704], [0b0000001001100, 13, 768],
+            [0b0000001001101, 13, 832], [0b0000001110010, 13, 896], [0b0000001110011, 13, 960],
+            [0b0000001110100, 13, 1024], [0b0000001110101, 13, 1088], [0b0000001110110, 13, 1152],
+            [0b0000001110111, 13, 1216], [0b0000001010010, 13, 1280], [0b0000001010011, 13, 1344],
+            [0b0000001010100, 13, 1408], [0b0000001010101, 13, 1472], [0b0000001011010, 13, 1536],
+            [0b0000001011011, 13, 1600], [0b0000001100100, 13, 1664], [0b0000001100101, 13, 1728],
+        ];
+
+        // Build lookup trees for fast decoding
+        function buildTree(terminal, makeup) {
+            const tree = {};
+            terminal.forEach((entry, runLen) => {
+                tree[entry[1] + '_' + entry[0]] = { run: runLen, type: 'T' };
+            });
+            if (makeup) {
+                makeup.forEach(entry => {
+                    tree[entry[1] + '_' + entry[0]] = { run: entry[2], type: 'M' };
+                });
+            }
+            return tree;
+        }
+        const whiteTree = buildTree(WHITE_TERMINAL, WHITE_MAKEUP);
+        const blackTree = buildTree(BLACK_TERMINAL, BLACK_MAKEUP);
+
+        function decodeRunLength(isWhite) {
+            const tree = isWhite ? whiteTree : blackTree;
+            let code = 0;
+            let bits = 0;
+            let totalRun = 0;
+
+            while (bits < 14) {
+                code = (code << 1) | readBit();
+                bits++;
+                const key = bits + '_' + code;
+                const entry = tree[key];
+                if (entry) {
+                    totalRun += entry.run;
+                    if (entry.type === 'T') return totalRun;
+                    // Makeup code — continue reading terminal
+                    code = 0;
+                    bits = 0;
+                }
+            }
+            return -1; // decode error
+        }
+
+        // G4 2D decoding with reference line
+        const MODE_PASS = 'P';
+        const MODE_HORIZ = 'H';
+        const MODE_VERT = 'V';
+
+        function decodeMode() {
+            // Read mode prefix bits
+            let b = readBit();
+            if (b === 1) return { mode: MODE_VERT, offset: 0 }; // V(0) = 1
+
+            b = readBit();
+            if (b === 1) {
+                // H = 001
+                const b2 = readBit();
+                if (b2 === 1) return { mode: MODE_HORIZ };
+                // Extensions not supported
+                return null;
+            }
+
+            b = readBit();
+            if (b === 1) {
+                // 011 = V(+1) or VR(1)
+                return { mode: MODE_VERT, offset: 1 };
+            }
+
+            b = readBit();
+            if (b === 0) {
+                // 0001 = P
+                return { mode: MODE_PASS };
+            }
+
+            // 0001x = need more bits
+            // Actually: re-examine
+            // Let me re-do the mode codes properly:
+            // V(0) = 1
+            // VR(1) = 011
+            // VL(1) = 010
+            // H = 001
+            // P = 0001
+            // VR(2) = 000011
+            // VL(2) = 000010
+            // VR(3) = 0000011
+            // VL(3) = 0000010
+            // We already read 0001, check if this is P or V(2)/V(3)
+            return null; // unrecognized
+        }
+
+        // Proper G4 mode decoder
+        function decodeMode2() {
+            const b1 = readBit();
+            if (b1 === 1) return { mode: MODE_VERT, offset: 0 };
+
+            const b2 = readBit();
+            const b3 = readBit();
+
+            if (b2 === 0 && b3 === 1) return { mode: MODE_HORIZ };
+
+            if (b2 === 1) {
+                // 01x
+                if (b3 === 1) return { mode: MODE_VERT, offset: 1 };  // VR(1) = 011
+                return { mode: MODE_VERT, offset: -1 };  // VL(1) = 010
+            }
+
+            // 00x where b3 already read
+            const b4 = readBit();
+            if (b3 === 0 && b4 === 1) return { mode: MODE_PASS }; // P = 0001
+
+            // 000x
+            const b5 = readBit();
+            if (b4 === 0) {
+                const b6 = readBit();
+                if (b5 === 1) {
+                    if (b6 === 1) return { mode: MODE_VERT, offset: 2 };  // VR(2) = 000011
+                    return { mode: MODE_VERT, offset: -2 }; // VL(2) = 000010
+                }
+                // 0000xx
+                const b7 = readBit();
+                if (b6 === 1) {
+                    if (b7 === 1) return { mode: MODE_VERT, offset: 3 };  // VR(3) = 0000011
+                    return { mode: MODE_VERT, offset: -3 }; // VL(3) = 0000010
+                }
+            }
+            return null; // EOFB or error
+        }
+
+        // Find b1 and b2 on reference line
+        function findB1B2(refLine, a0, curColor) {
+            // b1 = first changing element on ref line to the right of a0 with opposite color
+            const searchColor = curColor === 0 ? 1 : 0;
+            let b1 = width;
+            let start = Math.max(a0 + 1, 0);
+            // Find the first pixel of opposite color after a0
+            let pos = start;
+            while (pos < width && refLine[pos] !== searchColor) pos++;
+            // Now find the next changing element (transition to curColor)
+            b1 = pos;
+            // b2 = next changing element after b1
+            let b2 = b1;
+            while (b2 < width && refLine[b2] === searchColor) b2++;
+            return [b1, b2];
+        }
+
+        // Initialize reference line to all white
+        let refLine = new Uint8Array(width);
+        const curLine = new Uint8Array(width);
+
+        for (let y = 0; y < height; y++) {
+            curLine.fill(0);
+            let a0 = -1;
+            let curColor = 0; // 0=white, 1=black
+
+            while (a0 < width) {
+                const m = decodeMode2();
+                if (!m) break; // EOFB or error
+
+                if (m.mode === MODE_PASS) {
+                    const [b1, b2] = findB1B2(refLine, a0, curColor);
+                    a0 = b2;
+                } else if (m.mode === MODE_HORIZ) {
+                    const run1 = decodeRunLength(curColor === 0);
+                    const run2 = decodeRunLength(curColor !== 0);
+                    if (run1 < 0 || run2 < 0) break;
+
+                    const start1 = Math.max(a0, 0);
+                    for (let x = start1; x < Math.min(start1 + run1, width); x++) {
+                        curLine[x] = curColor;
+                    }
+                    const start2 = start1 + run1;
+                    const nextColor = curColor === 0 ? 1 : 0;
+                    for (let x = start2; x < Math.min(start2 + run2, width); x++) {
+                        curLine[x] = nextColor;
+                    }
+                    a0 = start2 + run2;
+                } else if (m.mode === MODE_VERT) {
+                    const [b1] = findB1B2(refLine, a0, curColor);
+                    const a1 = b1 + m.offset;
+                    const start = Math.max(a0, 0);
+                    for (let x = start; x < Math.min(a1, width); x++) {
+                        curLine[x] = curColor;
+                    }
+                    a0 = a1;
+                    curColor = curColor === 0 ? 1 : 0;
+                }
+            }
+
+            // Copy current line to output
+            const rowOff = y * width;
+            for (let x = 0; x < width; x++) {
+                out[rowOff + x] = curLine[x];
+            }
+
+            // Current becomes reference
+            refLine = new Uint8Array(curLine);
+        }
+
+        return out;
+    }
+
+    // Parse TIFF manually for CCITT G4 support
+    function parseTiffManual(buf) {
+        const bytes = new Uint8Array(buf);
+        const le = bytes[0] === 0x49;
+
+        function u16(o) {
+            return le ? (bytes[o] | (bytes[o+1] << 8)) : ((bytes[o] << 8) | bytes[o+1]);
+        }
+        function u32(o) {
+            return le
+                ? ((bytes[o] | (bytes[o+1] << 8) | (bytes[o+2] << 16) | (bytes[o+3] << 24)) >>> 0)
+                : (((bytes[o] << 24) | (bytes[o+1] << 16) | (bytes[o+2] << 8) | bytes[o+3]) >>> 0);
+        }
+
+        const pages = [];
+        let ifdOff = u32(4);
+
+        while (ifdOff > 0 && ifdOff < bytes.length - 2) {
+            const n = u16(ifdOff);
+            const tags = {};
+            for (let i = 0; i < n; i++) {
+                const e = ifdOff + 2 + i * 12;
+                const tag = u16(e);
+                const type = u16(e + 2);
+                const count = u32(e + 4);
+                const valOff = e + 8;
+
+                if (count === 1) {
+                    tags[tag] = (type === 3) ? u16(valOff) : u32(valOff);
+                } else {
+                    // Multi-value: read from offset
+                    const dataOff = u32(valOff);
+                    const vals = [];
+                    for (let j = 0; j < count; j++) {
+                        if (type === 3) vals.push(u16(dataOff + j * 2));
+                        else vals.push(u32(dataOff + j * 4));
+                    }
+                    tags[tag] = vals;
+                }
+            }
+            pages.push(tags);
+            // Next IFD
+            const nextOff = u32(ifdOff + 2 + n * 12);
+            if (nextOff === 0 || nextOff === ifdOff) break;
+            ifdOff = nextOff;
+        }
+
+        return pages;
+    }
+
+    // Decode a CCITT G4 TIFF page to RGBA
+    function decodeCCITTPage(buf, tags) {
+        const w = tags[256]; // ImageWidth
+        const h = tags[257]; // ImageLength
+        const compression = tags[259];
+        const photometric = tags[262] || 0;
+        const fillOrder = tags[266] || 1;
+        const rowsPerStrip = tags[278] || h;
+
+        if (compression !== 4) return null; // Not CCITT G4
+
+        // Collect strip data
+        const stripOffsets = Array.isArray(tags[273]) ? tags[273] : [tags[273]];
+        const stripByteCounts = Array.isArray(tags[279]) ? tags[279] : [tags[279]];
+
+        // Concatenate all strips
+        let totalBytes = 0;
+        for (const c of stripByteCounts) totalBytes += c;
+        const compData = new Uint8Array(totalBytes);
+        let pos = 0;
+        const bytes = new Uint8Array(buf);
+        for (let s = 0; s < stripOffsets.length; s++) {
+            const off = stripOffsets[s];
+            const len = stripByteCounts[s];
+            compData.set(bytes.subarray(off, off + len), pos);
+            pos += len;
+        }
+
+        // Decode CCITT G4
+        const pixels = decodeCCITTG4(compData, w, h, fillOrder);
+
+        // Convert 1-bit to RGBA
+        const rgba = new Uint8Array(w * h * 4);
+        for (let i = 0; i < w * h; i++) {
+            let val = pixels[i];
+            // Apply photometric interpretation
+            if (photometric === 0) val = 1 - val; // WhiteIsZero: 0=white, 1=black
+            // photometric=1: BlackIsZero/MinIsBlack: 0=white, 1=black (already correct)
+            const color = val === 0 ? 255 : 0; // white=255, black=0
+            rgba[i * 4] = color;
+            rgba[i * 4 + 1] = color;
+            rgba[i * 4 + 2] = color;
+            rgba[i * 4 + 3] = 255;
+        }
+
+        return { rgba, width: w, height: h };
+    }
+
+    async function convertTiffToPdf(file, useOcr) {
         const buf = await file.arrayBuffer();
 
-        // TIFF magic number doğrulaması
         const header = new Uint8Array(buf, 0, 4);
         const isTiff = (header[0] === 0x49 && header[1] === 0x49 && header[2] === 0x2A && header[3] === 0x00)
                      || (header[0] === 0x4D && header[1] === 0x4D && header[2] === 0x00 && header[3] === 0x2A);
         if (!isTiff) throw new Error('Geçerli bir TIFF dosyası değil.');
 
+        // Try UTIF first, fall back to manual CCITT G4 decoder
         let ifds;
+        let useCCITT = false;
         try {
             ifds = UTIF.decode(buf);
+            // Check if UTIF actually decoded width/height
+            if (ifds.length > 0) {
+                UTIF.decodeImage(buf, ifds[0]);
+                const testRgba = UTIF.toRGBA8(ifds[0]);
+                if (!ifds[0].width || !ifds[0].height || !testRgba || testRgba.length === 0) {
+                    useCCITT = true;
+                }
+            }
         } catch (e) {
-            throw new Error('TIFF decode hatası: geçerli bir TIFF dosyası değil.');
+            useCCITT = true;
         }
 
-        if (!ifds || ifds.length === 0) {
+        let tiffPages;
+        if (useCCITT) {
+            tiffPages = parseTiffManual(buf);
+            if (!tiffPages || tiffPages.length === 0) {
+                throw new Error('TIFF dosyası okunamadı.');
+            }
+            // Verify it's actually CCITT G4
+            if (tiffPages[0][259] !== 4) {
+                throw new Error('Desteklenmeyen TIFF sıkıştırma formatı: ' + (tiffPages[0][259] || 'bilinmiyor'));
+            }
+        } else if (!ifds || ifds.length === 0) {
             throw new Error('TIFF dosyasında sayfa bulunamadı.');
         }
+
+        const pageCount = useCCITT ? tiffPages.length : ifds.length;
 
         const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
         const MARGIN = 5;
@@ -759,13 +1875,34 @@
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
 
-        for (let i = 0; i < ifds.length; i++) {
+        // Lazy-load Tesseract if OCR requested
+        let ocrWorker = null;
+        if (useOcr && window.Tesseract) {
+            try {
+                ocrWorker = await Tesseract.createWorker('tur');
+            } catch (e) {
+                console.warn('OCR worker oluşturulamadı:', e);
+            }
+        }
+
+        for (let i = 0; i < pageCount; i++) {
             if (i > 0) doc.addPage();
 
-            UTIF.decodeImage(buf, ifds[i]);
-            const rgba = UTIF.toRGBA8(ifds[i]);
-            const w = ifds[i].width;
-            const h = ifds[i].height;
+            let w, h, rgbaData;
+
+            if (useCCITT) {
+                const decoded = decodeCCITTPage(buf, tiffPages[i]);
+                if (!decoded) throw new Error('TIFF sayfası ' + (i+1) + ' decode edilemedi.');
+                w = decoded.width;
+                h = decoded.height;
+                rgbaData = decoded.rgba;
+            } else {
+                if (i > 0) UTIF.decodeImage(buf, ifds[i]); // First page already decoded above
+                const rgba = UTIF.toRGBA8(ifds[i]);
+                w = ifds[i].width;
+                h = ifds[i].height;
+                rgbaData = new Uint8Array(rgba.buffer || rgba);
+            }
 
             if (w > MAX_TIFF_DIMENSION || h > MAX_TIFF_DIMENSION || w * h > MAX_TIFF_PIXELS) {
                 throw new Error('TIFF boyutları güvenlik limitini aşıyor (' + w + 'x' + h + ').');
@@ -774,12 +1911,11 @@
             canvas.width = w;
             canvas.height = h;
             const imgData = ctx.createImageData(w, h);
-            imgData.data.set(new Uint8Array(rgba.buffer || rgba));
+            imgData.data.set(rgbaData);
             ctx.putImageData(imgData, 0, 0);
 
             const jpegDataUrl = canvas.toDataURL('image/jpeg', 0.92);
 
-            // Fit to A4 with margins, preserve aspect ratio, center
             const imgAspect = w / h;
             const pageAspect = usableW / usableH;
             let renderW, renderH;
@@ -797,8 +1933,53 @@
 
             doc.addImage(jpegDataUrl, 'JPEG', x, y, renderW, renderH);
 
-            // Free memory
+            // OCR: add invisible text layer
+            if (ocrWorker) {
+                try {
+                    const result = await ocrWorker.recognize(canvas);
+                    if (result.data && result.data.words) {
+                        // Render invisible text overlay
+                        const scaleX = renderW / w;
+                        const scaleY = renderH / h;
+
+                        doc.setFont('NotoSerif', 'normal');
+
+                        for (const word of result.data.words) {
+                            const bbox = word.bbox;
+                            const wordX = x + bbox.x0 * scaleX;
+                            const wordY = y + bbox.y0 * scaleY;
+                            const wordW = (bbox.x1 - bbox.x0) * scaleX;
+                            const wordH = (bbox.y1 - bbox.y0) * scaleY;
+
+                            // Calculate font size to fit
+                            const fontSize = Math.max(2, Math.min(wordH / PT_TO_MM * 0.8, 14));
+                            doc.setFontSize(fontSize);
+                            doc.setTextColor(255, 255, 255); // White (invisible on white bg)
+                            // Use transparency via GState if available
+                            try {
+                                const gs = new doc.GState({ opacity: 0.01 });
+                                doc.saveGraphicsState();
+                                doc.setGState(gs);
+                                doc.text(word.text, wordX, wordY + wordH * 0.8);
+                                doc.restoreGraphicsState();
+                            } catch (e) {
+                                // Fallback: render with near-invisible color
+                                doc.setTextColor(255, 255, 254);
+                                doc.text(word.text, wordX, wordY + wordH * 0.8);
+                            }
+                        }
+                        doc.setTextColor(0, 0, 0);
+                    }
+                } catch (e) {
+                    console.warn('OCR failed for page', i, e);
+                }
+            }
+
             ctx.clearRect(0, 0, w, h);
+        }
+
+        if (ocrWorker) {
+            await ocrWorker.terminate();
         }
 
         canvas.width = 1;
@@ -807,8 +1988,135 @@
         return doc.output('blob');
     }
 
+    // ── Copy Text ──
+    async function copyFileText(file, btnEl) {
+        try {
+            const udf = await parseUdf(file);
+            const text = udf.rawText || udf.paragraphs.map(p => {
+                if (p.type === 'table') {
+                    return p.table.map(row =>
+                        row.cells.map(cell =>
+                            cell.paragraphs.map(cp => cp.runs.map(r => r.text).join('')).join('\n')
+                        ).join('\t')
+                    ).join('\n');
+                }
+                return p.runs.map(r => r.text).join('');
+            }).join('\n');
+
+            await navigator.clipboard.writeText(text);
+            const origText = btnEl.textContent;
+            btnEl.textContent = 'Kopyalandı!';
+            btnEl.classList.add('btn-copied');
+            setTimeout(() => {
+                btnEl.textContent = origText;
+                btnEl.classList.remove('btn-copied');
+            }, 2000);
+        } catch (err) {
+            console.error('Copy failed:', err);
+            const origText = btnEl.textContent;
+            btnEl.textContent = 'Hata!';
+            setTimeout(() => { btnEl.textContent = origText; }, 2000);
+        }
+    }
+
+    // ── Preview ──
+    async function previewFile(file) {
+        if (!previewModal || !previewContent) return;
+
+        try {
+            const udf = await parseUdf(file);
+            let html = '';
+
+            // Show signature info if available
+            if (udf.signatureInfo) {
+                html += `<div class="preview-sig-info">
+                    <strong>İmza Bilgisi:</strong> ${escapeHtml(udf.signatureInfo)}
+                    <div class="preview-sig-disclaimer">Bu bilgi yalnızca gösterim amaçlıdır. Kriptografik doğrulama yapılmamıştır.</div>
+                </div>`;
+            }
+
+            // Render header
+            if (udf.headerParagraphs.length > 0) {
+                html += '<div class="preview-header">';
+                for (const para of udf.headerParagraphs) {
+                    html += renderParaToHtml(para);
+                }
+                html += '</div><hr>';
+            }
+
+            // Render body
+            for (const para of udf.paragraphs) {
+                if (para.type === 'table') {
+                    html += renderTableToHtml(para.table);
+                    continue;
+                }
+                html += renderParaToHtml(para);
+            }
+
+            // Render footer
+            if (udf.footerParagraphs.length > 0) {
+                html += '<hr><div class="preview-footer">';
+                for (const para of udf.footerParagraphs) {
+                    html += renderParaToHtml(para);
+                }
+                html += '</div>';
+            }
+
+            previewContent.innerHTML = html;
+            previewModal.hidden = false;
+            previewModal.classList.add('active');
+        } catch (err) {
+            console.error('Preview failed:', err);
+        }
+    }
+
+    function renderParaToHtml(para) {
+        const alignMap = { 0: 'left', 1: 'center', 2: 'right', 3: 'justify' };
+        const align = alignMap[para.alignment] || 'left';
+        const indent = (para.leftIndent || 0) * PT_TO_MM + (para.listType ? (para.listLevel + 1) * 10 : 0);
+
+        let content = '';
+        if (para.listType) {
+            content += escapeHtml(getListMarker(para.listType, para.listLevel, para.listIndex));
+        }
+
+        for (const r of para.runs) {
+            let text = escapeHtml(r.text);
+            if (r.text === '\t') text = '&emsp;';
+            if (r.bold) text = `<strong>${text}</strong>`;
+            if (r.italic) text = `<em>${text}</em>`;
+            if (r.underline) text = `<u>${text}</u>`;
+            if (r.color) {
+                text = `<span style="color:rgb(${r.color.r},${r.color.g},${r.color.b})">${text}</span>`;
+            }
+            content += text;
+        }
+
+        const style = `text-align:${align};margin-left:${indent}px;margin-top:${(para.spaceAbove || 0) * 0.5}px;margin-bottom:${(para.spaceBelow || 0) * 0.5}px;`;
+        return `<p style="${style}">${content || '&nbsp;'}</p>`;
+    }
+
+    function renderTableToHtml(tableRows) {
+        let html = '<table class="preview-table">';
+        for (const row of tableRows) {
+            html += '<tr>';
+            for (const cell of row.cells) {
+                const cs = cell.colspan > 1 ? ` colspan="${cell.colspan}"` : '';
+                const rs = cell.rowspan > 1 ? ` rowspan="${cell.rowspan}"` : '';
+                html += `<td${cs}${rs}>`;
+                for (const p of cell.paragraphs) {
+                    html += renderParaToHtml(p);
+                }
+                html += '</td>';
+            }
+            html += '</tr>';
+        }
+        html += '</table>';
+        return html;
+    }
+
     // ── Download Helpers ──
-    function downloadPdf(blob, filename) {
+    function downloadBlob(blob, filename) {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
@@ -819,14 +2127,17 @@
         URL.revokeObjectURL(url);
     }
 
+    // Legacy alias
+    function downloadPdf(blob, filename) { downloadBlob(blob, filename); }
+
     async function downloadAllAsZip(outputFiles) {
         const zip = new JSZip();
         outputFiles.forEach(entry => {
-            const name = entry.status === 'passthrough' ? entry.file.name : toPdfFilename(entry.file.name);
+            const name = entry.status === 'passthrough' ? entry.file.name : toOutputFilename(entry.file.name);
             zip.file(name, entry.result);
         });
 
-        let zipName = 'converted-to-pdf.zip';
+        let zipName = 'converted-files.zip';
 
         const zipBlob = await zip.generateAsync({ type: 'blob' });
         const url = URL.createObjectURL(zipBlob);
