@@ -36,6 +36,10 @@
     let outputFormat = 'pdf';
     const toastContainer = document.getElementById('toastContainer');
     const progressDetail = document.getElementById('progressDetail');
+    const downloadBar = document.getElementById('downloadBar');
+    const downloadSelectedBtn = document.getElementById('downloadSelectedBtn');
+    const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+    const selectedCountEl = document.getElementById('selectedCount');
 
     // ── Toast Notification System ──
     function showToast(message, type = 'error', duration = 5000) {
@@ -179,10 +183,39 @@
 
     clearAllBtn.addEventListener('click', () => {
         files = [];
+        if (downloadBar) downloadBar.hidden = true;
         renderFileList();
     });
 
     convertAllBtn.addEventListener('click', convertAll);
+
+    if (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('change', () => {
+            const checked = selectAllCheckbox.checked;
+            files.forEach(f => {
+                if ((f.status === 'done' || f.status === 'passthrough') && f.result) {
+                    f.selected = checked;
+                }
+            });
+            renderFileList();
+        });
+    }
+
+    if (downloadSelectedBtn) {
+        downloadSelectedBtn.addEventListener('click', async () => {
+            const selected = files.filter(f => (f.status === 'done' || f.status === 'passthrough') && f.result && f.selected !== false);
+            if (selected.length === 0) return;
+            if (selected.length === 1) {
+                const entry = selected[0];
+                const name = entry.status === 'passthrough' ? entry.file.name : toOutputFilename(entry.file.name);
+                downloadBlob(entry.result, name);
+                trackEvent('file_download', { file_count: 1, download_type: 'selected_single' });
+            } else {
+                await downloadAllAsZip(selected);
+                trackEvent('file_download', { file_count: selected.length, download_type: 'selected_zip' });
+            }
+        });
+    }
 
     if (formatSelect) {
         formatSelect.addEventListener('change', (e) => {
@@ -338,7 +371,12 @@
                 ? `<div class="file-item-sig" title="İmza Bilgisi">${escapeHtml(entry.signatureInfo)}</div>`
                 : '';
 
+            const selectCheckbox = isDownloadable
+                ? `<input type="checkbox" class="file-select-checkbox" data-select="${i}" ${entry.selected !== false ? 'checked' : ''} aria-label="${escapeHtml(entry.file.name)} seç">`
+                : '';
+
             div.innerHTML = `
+                ${selectCheckbox}
                 <div class="file-item-icon">${iconLabel}</div>
                 <div class="file-item-info">
                     <div class="file-item-name" title="${escapeHtml(entry.file.name)}">${escapeHtml(entry.file.name)} ${fromZipLabel}</div>
@@ -394,6 +432,41 @@
                 if (entry) await copyFileText(entry.file, btn);
             });
         });
+
+        // File select checkbox handlers
+        fileItems.querySelectorAll('.file-select-checkbox').forEach(cb => {
+            cb.addEventListener('change', (e) => {
+                const idx = parseInt(cb.dataset.select);
+                files[idx].selected = cb.checked;
+                updateDownloadBar();
+            });
+        });
+
+        updateDownloadBar();
+    }
+
+    function updateDownloadBar() {
+        const downloadable = files.filter(f => (f.status === 'done' || f.status === 'passthrough') && f.result);
+        if (downloadable.length <= 1) {
+            if (downloadBar) downloadBar.hidden = true;
+            return;
+        }
+        if (downloadBar) downloadBar.hidden = false;
+
+        const selectedFiles = downloadable.filter(f => f.selected !== false);
+        const count = selectedFiles.length;
+        const total = downloadable.length;
+
+        if (selectedCountEl) {
+            selectedCountEl.textContent = `${count}/${total} dosya seçili`;
+        }
+        if (downloadSelectedBtn) {
+            downloadSelectedBtn.disabled = count === 0;
+        }
+        if (selectAllCheckbox) {
+            selectAllCheckbox.checked = count === total;
+            selectAllCheckbox.indeterminate = count > 0 && count < total;
+        }
     }
 
     function getStatusBadge(status) {
@@ -498,15 +571,18 @@
         convertAllBtn.disabled = false;
 
         const outputFiles = files.filter(f => f.status === 'done' || f.status === 'passthrough');
-        if (outputFiles.length === 1 && outputFiles[0].status === 'done') {
-            downloadBlob(outputFiles[0].result, toOutputFilename(outputFiles[0].file.name));
+        // Mark all converted files as selected by default
+        outputFiles.forEach(f => { if (f.selected === undefined) f.selected = true; });
+
+        if (outputFiles.length === 1) {
+            const entry = outputFiles[0];
+            const name = entry.status === 'passthrough' ? entry.file.name : toOutputFilename(entry.file.name);
+            downloadBlob(entry.result, name);
             trackEvent('file_download', { file_count: 1, download_type: 'single' });
-        } else if (outputFiles.length === 1 && outputFiles[0].status === 'passthrough') {
-            downloadBlob(outputFiles[0].result, outputFiles[0].file.name);
-            trackEvent('file_download', { file_count: 1, download_type: 'passthrough' });
         } else if (outputFiles.length > 1) {
-            await downloadAllAsZip(outputFiles);
-            trackEvent('file_download', { file_count: outputFiles.length, download_type: 'zip' });
+            // Show download bar for user to select which files to download
+            updateDownloadBar();
+            showToast(`${outputFiles.length} dosya hazır — indirmek istediklerinizi seçin.`, 'success', 5000);
         }
     }
 
