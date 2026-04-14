@@ -36,9 +36,17 @@
     <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" as="style">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <meta name="google-adsense-account" content="ca-pub-4410660717929931">
+    <!-- Google Analytics 4 -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-2QDTPQTFQ8"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-2QDTPQTFQ8');
+    </script>
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4410660717929931" crossorigin="anonymous"></script>
     <link rel="stylesheet" href="style.css">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://*.googlesyndication.com https://*.google.com https://*.doubleclick.net https://*.googleadservices.com 'unsafe-inline'; style-src 'self' https://fonts.googleapis.com 'unsafe-inline'; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://*.googlesyndication.com https://*.google.com https://*.doubleclick.net; frame-src https://*.googlesyndication.com https://*.doubleclick.net https://*.google.com; frame-ancestors 'self';">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://*.googlesyndication.com https://*.google.com https://*.doubleclick.net https://*.googleadservices.com https://www.googletagmanager.com https://*.google-analytics.com 'unsafe-inline'; style-src 'self' https://fonts.googleapis.com 'unsafe-inline'; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https: blob:; connect-src 'self' https://*.googlesyndication.com https://*.google.com https://*.doubleclick.net https://cdn.jsdelivr.net https://tessdata.projectnaptha.com https://www.googletagmanager.com https://*.google-analytics.com https://*.analytics.google.com; worker-src 'self' blob:; frame-src https://*.googlesyndication.com https://*.doubleclick.net https://*.google.com; frame-ancestors 'self';">
     <meta name="referrer" content="strict-origin-when-cross-origin">
     <meta http-equiv="Permissions-Policy" content="geolocation=(), microphone=(), camera=(), payment=()">
 
@@ -65,7 +73,11 @@
             "Ücretsiz ve kayıt gerektirmez",
             "UDF, TIFF ve ZIP dosya desteği",
             "Çok sayfalı TIFF dönüştürme",
-            "ZIP otomatik çıkarma ve toplu dönüştürme"
+            "ZIP otomatik çıkarma ve toplu dönüştürme",
+            "Word (.docx) export desteği",
+            "Belge önizleme ve metin kopyalama",
+            "Offline çalışma (PWA)",
+            "OCR metin tanıma (Türkçe)"
         ],
         "screenshot": "https://convertudftopdf.com/og-image.png",
         "softwareVersion": "1.0",
@@ -217,7 +229,7 @@
                 </svg>
                 <span>convertudftopdf<small>.com</small></span>
             </a>
-            <nav class="nav">
+            <nav class="nav" aria-label="Ana navigasyon">
                 <a href="#converter">Dönüştür</a>
                 <a href="#how-it-works">Nasıl Çalışır</a>
                 <a href="#faq">SSS</a>
@@ -248,7 +260,7 @@
     <section id="converter" class="converter-section">
         <div class="container">
             <div class="converter-card">
-                <div id="dropZone" class="drop-zone">
+                <div id="dropZone" class="drop-zone" role="button" tabindex="0" aria-describedby="dropZoneDesc">
                     <div class="drop-zone-content">
                         <svg class="upload-icon" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <rect x="8" y="16" width="48" height="40" rx="4" stroke="currentColor" stroke-width="2.5" fill="none"/>
@@ -256,8 +268,8 @@
                             <path d="M32 28v16M26 34l6-6 6 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
                         </svg>
                         <h3>.udf, .tiff veya .zip dosyanızı sürükleyin veya seçin</h3>
-                        <p>Birden fazla dosya seçebilirsiniz — ZIP içindekiler otomatik çıkarılır</p>
-                        <button id="selectBtn" class="btn btn-primary">Dosya Seç</button>
+                        <p id="dropZoneDesc">Birden fazla dosya seçebilirsiniz — ZIP içindekiler otomatik çıkarılır</p>
+                        <button id="selectBtn" class="btn btn-primary" aria-label="Dosya seçmek için tıklayın">Dosya Seç</button>
                         <input type="file" id="fileInput" accept=".udf,.tiff,.tif,.zip" multiple hidden>
                     </div>
                 </div>
@@ -266,11 +278,21 @@
                 <div id="fileList" class="file-list" hidden>
                     <div class="file-list-header">
                         <h3>Dosyalar</h3>
-                        <button id="clearAllBtn" class="btn btn-ghost">Temizle</button>
+                        <button id="clearAllBtn" class="btn btn-ghost" aria-label="Tüm dosyaları temizle">Temizle</button>
                     </div>
-                    <div id="fileItems" class="file-items"></div>
+                    <div id="fileItems" class="file-items" aria-live="polite"></div>
                     <div class="file-list-actions">
-                        <button id="convertAllBtn" class="btn btn-primary btn-lg">
+                        <div class="convert-options">
+                            <select id="formatSelect" class="format-select" aria-label="Çıktı formatı seçin">
+                                <option value="pdf">PDF</option>
+                                <option value="docx">Word (.docx)</option>
+                            </select>
+                            <label class="ocr-label" title="TIFF dosyalarında metin tanıma (OCR) — Tesseract.js gerektirir">
+                                <input type="checkbox" id="ocrCheckbox">
+                                <span>OCR</span>
+                            </label>
+                        </div>
+                        <button id="convertAllBtn" class="btn btn-primary btn-lg" aria-label="Tüm dosyaları dönüştür">
                             <svg viewBox="0 0 20 20" fill="currentColor" width="20" height="20">
                                 <path d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"/>
                             </svg>
@@ -284,7 +306,8 @@
                     <div class="progress-bar-container">
                         <div id="progressBar" class="progress-bar"></div>
                     </div>
-                    <p id="progressText" class="progress-text">Dönüştürülüyor...</p>
+                    <p id="progressText" class="progress-text" aria-live="polite">Dönüştürülüyor...</p>
+                    <p id="progressDetail" class="progress-detail"></p>
                 </div>
             </div>
         </div>
@@ -405,7 +428,7 @@
                 </details>
                 <details class="faq-item">
                     <summary>İnternet bağlantısı olmadan kullanabilir miyim?</summary>
-                    <p>Sayfa ilk yüklendikten sonra dönüştürme işlemi tamamen tarayıcınızda gerçekleşir. Ancak sayfayı açmak için internet bağlantısı gerekir. Dosyalarınız hiçbir zaman internet üzerinden gönderilmez.</p>
+                    <p>Evet! Sitemiz PWA (Progressive Web App) olarak çalışır. Sayfayı bir kez yükledikten sonra internet bağlantısı olmadan da dönüştürme yapabilirsiniz. Mobilde "Ana Ekrana Ekle" seçeneğiyle uygulama gibi kullanabilirsiniz. Dosyalarınız hiçbir zaman internet üzerinden gönderilmez.</p>
                 </details>
                 <details class="faq-item">
                     <summary>UYAP Döküman Editörü olmadan UDF dosyası açılabilir mi?</summary>
@@ -484,10 +507,34 @@
         </div>
     </footer>
 
+    <!-- Toast Notifications -->
+    <div id="toastContainer" class="toast-container" aria-live="assertive"></div>
+
+    <!-- Preview Modal -->
+    <div id="previewModal" class="preview-modal" hidden role="dialog" aria-modal="true" aria-label="Belge önizleme">
+        <div class="preview-modal-dialog">
+            <div class="preview-modal-header">
+                <h3>Belge Önizleme</h3>
+                <button id="previewClose" class="btn-modal-close" title="Kapat" aria-label="Önizleme penceresini kapat">&times;</button>
+            </div>
+            <div id="previewContent" class="preview-modal-body"></div>
+        </div>
+    </div>
+
     <!-- Scripts -->
     <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" integrity="sha384-+mbV2IY1Zk/X1p/nWllGySJSUN8uMs+gUAN10Or95UBH0fpj6GfKgPmgC5EXieXG" crossorigin="anonymous"></script>
     <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="sha384-JcnsjUPPylna1s1fvi1u12X5qjY5OL56iySh75FdtrwhO/SWXgMjoVqcKyIIWOLk" crossorigin="anonymous"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/utif@3.1.0/UTIF.js" integrity="sha384-RyBmXHdfZ/Uon+ud+/AqSyWpUWnKYt2tkRG/P4gWoRUGDU+qIAV3tGBPNlYTBZEF" crossorigin="anonymous"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.min.js" integrity="sha384-TcLTgu6flPhnZ5dfHnHimsxNFjYWN0povfGgnOvgPJKbZe6IbuoC2ociiatSHl9E" crossorigin="anonymous"></script>
     <script defer src="converter.js"></script>
+
+    <!-- Service Worker Registration -->
+    <script>
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/sw.js').catch(() => {});
+        });
+    }
+    </script>
 </body>
 </html>

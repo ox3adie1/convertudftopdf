@@ -34,6 +34,31 @@
     let fontsLoaded = false;
     let fontCache = {};
     let outputFormat = 'pdf';
+    const toastContainer = document.getElementById('toastContainer');
+    const progressDetail = document.getElementById('progressDetail');
+
+    // ── Toast Notification System ──
+    function showToast(message, type = 'error', duration = 5000) {
+        if (!toastContainer) return;
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+        toast.innerHTML = `<span>${escapeHtml(message)}</span><button class="toast-close" aria-label="Kapat">&times;</button>`;
+        toastContainer.appendChild(toast);
+        const closeBtn = toast.querySelector('.toast-close');
+        const remove = () => {
+            toast.style.animation = 'toastOut 0.3s ease forwards';
+            toast.addEventListener('animationend', () => toast.remove());
+        };
+        closeBtn.addEventListener('click', remove);
+        if (duration > 0) setTimeout(remove, duration);
+    }
+
+    // ── GA4 Event Tracking ──
+    function trackEvent(eventName, params) {
+        if (typeof gtag === 'function') {
+            gtag('event', eventName, params);
+        }
+    }
 
     // ── File Type Helpers ──
     const CONVERTIBLE_EXTENSIONS = ['.udf', '.tiff', '.tif'];
@@ -122,6 +147,13 @@
 
     dropZone.addEventListener('click', () => fileInput.click());
 
+    dropZone.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            fileInput.click();
+        }
+    });
+
     fileInput.addEventListener('change', async (e) => {
         await addFiles(e.target.files);
         fileInput.value = '';
@@ -155,6 +187,7 @@
     if (formatSelect) {
         formatSelect.addEventListener('change', (e) => {
             outputFormat = e.target.value;
+            trackEvent('format_select', { format: outputFormat });
         });
     }
 
@@ -176,18 +209,28 @@
 
     // ── File Management ──
     async function addFiles(newFiles) {
+        let addedCount = 0;
         for (const f of newFiles) {
             if (isZipFile(f.name)) {
                 await extractZipAndAdd(f);
+                addedCount++;
                 continue;
             }
-            if (!isConvertibleFile(f.name)) continue;
+            if (!isConvertibleFile(f.name)) {
+                showToast(`"${f.name}" desteklenmeyen dosya formatı. Yalnızca .udf, .tiff ve .zip dosyaları kabul edilir.`, 'warning');
+                continue;
+            }
 
             if (f.size > MAX_FILE_SIZE) {
                 files.push({ file: f, status: 'error', result: null, errorMsg: 'Dosya boyutu 10MB limitini aşıyor.' });
+                showToast(`"${f.name}" dosya boyutu 10MB limitini aşıyor.`, 'error');
             } else {
                 files.push({ file: f, status: 'waiting', result: null, errorMsg: null });
+                addedCount++;
             }
+        }
+        if (addedCount > 0) {
+            trackEvent('file_upload', { file_count: addedCount, file_types: [...new Set(Array.from(newFiles).map(f => getFileExtension(f.name)))].join(',') });
         }
         renderFileList();
     }
@@ -371,22 +414,29 @@
 
         convertAllBtn.disabled = true;
         progressArea.hidden = false;
+        if (progressDetail) progressDetail.textContent = '';
 
         const hasUdfFiles = pending.some(f => isUdfFile(f.file.name));
         if (hasUdfFiles) {
             progressText.textContent = 'Fontlar yükleniyor...';
+            if (progressDetail) progressDetail.textContent = 'Türkçe karakter desteği için font dosyaları indiriliyor...';
             try {
                 await loadFonts();
             } catch (err) {
                 console.error('Font loading error:', err);
-                progressText.textContent = 'Font yükleme hatası! Sayfa bir HTTP sunucu üzerinden açılmalıdır.';
+                progressText.textContent = 'Font yükleme hatası!';
+                showToast('Font dosyaları yüklenemedi. Sayfa bir HTTP sunucu üzerinden açılmalıdır (file:// desteklenmez).', 'error', 0);
+                trackEvent('conversion_error', { error_type: 'font_load', error_message: err.message });
                 convertAllBtn.disabled = false;
                 return;
             }
         }
 
+        const startTime = Date.now();
         let processed = 0;
         const total = files.filter(f => f.status === 'waiting').length;
+
+        trackEvent('conversion_start', { file_count: total, output_format: outputFormat });
 
         for (let i = 0; i < files.length; i++) {
             if (files[i].status !== 'waiting') continue;
@@ -394,17 +444,25 @@
             files[i].status = 'converting';
             renderFileList();
             processed++;
-            progressBar.style.width = `${((processed - 1) / Math.max(total, 1)) * 100}%`;
-            progressText.textContent = `Dönüştürülüyor: ${files[i].file.name} (${processed}/${total})`;
+            const pct = Math.round(((processed - 1) / Math.max(total, 1)) * 100);
+            progressBar.style.width = `${pct}%`;
+            progressText.textContent = `Dosya ${processed}/${total} dönüştürülüyor...`;
+            if (progressDetail) {
+                const fileType = isTiffFile(files[i].file.name) ? 'TIFF' : 'UDF';
+                progressDetail.textContent = `${files[i].file.name} — ${fileType} ayrıştırılıyor...`;
+            }
 
             try {
                 let result;
                 if (isTiffFile(files[i].file.name)) {
+                    if (progressDetail) progressDetail.textContent = `${files[i].file.name} — TIFF → PDF oluşturuluyor...`;
                     const useOcr = ocrCheckbox && ocrCheckbox.checked;
                     result = await convertTiffToPdf(files[i].file, useOcr);
                 } else if (outputFormat === 'docx') {
+                    if (progressDetail) progressDetail.textContent = `${files[i].file.name} — Word belgesi oluşturuluyor...`;
                     result = await convertUdfToDocx(files[i].file);
                 } else {
+                    if (progressDetail) progressDetail.textContent = `${files[i].file.name} — PDF oluşturuluyor...`;
                     result = await convertUdfToPdf(files[i].file);
                 }
                 files[i].status = 'done';
@@ -415,6 +473,8 @@
                 console.error('Conversion error:', err);
                 files[i].status = 'error';
                 files[i].errorMsg = getErrorMessage(err);
+                showToast(`"${files[i].file.name}" dönüştürülemedi: ${files[i].errorMsg}`, 'error');
+                trackEvent('conversion_error', { error_type: 'file_convert', file_name: files[i].file.name, error_message: err.message });
             }
 
             renderFileList();
@@ -424,22 +484,29 @@
         const doneCount = files.filter(f => f.status === 'done').length;
         const passthroughCount = files.filter(f => f.status === 'passthrough').length;
         const errorCount = files.filter(f => f.status === 'error').length;
+        const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
 
         if (errorCount > 0) {
             progressText.textContent = `${doneCount} dosya dönüştürüldü, ${errorCount} dosyada hata oluştu.`;
         } else {
-            progressText.textContent = 'Tüm dosyalar hazır!';
+            progressText.textContent = `Tüm dosyalar hazır! (${elapsed} saniye)`;
         }
+        if (progressDetail) progressDetail.textContent = '';
+
+        trackEvent('conversion_complete', { total: total, success: doneCount, errors: errorCount, duration_sec: elapsed, output_format: outputFormat });
 
         convertAllBtn.disabled = false;
 
         const outputFiles = files.filter(f => f.status === 'done' || f.status === 'passthrough');
         if (outputFiles.length === 1 && outputFiles[0].status === 'done') {
             downloadBlob(outputFiles[0].result, toOutputFilename(outputFiles[0].file.name));
+            trackEvent('file_download', { file_count: 1, download_type: 'single' });
         } else if (outputFiles.length === 1 && outputFiles[0].status === 'passthrough') {
             downloadBlob(outputFiles[0].result, outputFiles[0].file.name);
+            trackEvent('file_download', { file_count: 1, download_type: 'passthrough' });
         } else if (outputFiles.length > 1) {
             await downloadAllAsZip(outputFiles);
+            trackEvent('file_download', { file_count: outputFiles.length, download_type: 'zip' });
         }
     }
 
@@ -1985,6 +2052,7 @@
             }, 2000);
         } catch (err) {
             console.error('Copy failed:', err);
+            showToast('Metin kopyalanamadı. Tarayıcınız pano erişimine izin vermiyor olabilir.', 'error');
             const origText = btnEl.textContent;
             btnEl.textContent = 'Hata!';
             setTimeout(() => { btnEl.textContent = origText; }, 2000);
@@ -2039,6 +2107,7 @@
             previewModal.classList.add('active');
         } catch (err) {
             console.error('Preview failed:', err);
+            showToast('Önizleme yüklenemedi: dosya bozuk veya desteklenmeyen format.', 'error');
         }
     }
 
