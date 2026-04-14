@@ -64,7 +64,7 @@
         }
         if (/^-?\d+$/.test(colorStr)) {
             let val = parseInt(colorStr);
-            if (val < 0) val = val & 0xFFFFFFFF; // Java negative packed integer → unsigned
+            // Java negative packed integer: extract RGB via bitmasking (works for both positive and negative)
             const r = (val >> 16) & 0xFF;
             const g = (val >> 8) & 0xFF;
             const b = val & 0xFF;
