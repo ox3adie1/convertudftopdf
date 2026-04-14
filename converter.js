@@ -687,17 +687,14 @@
         }
 
         // Filter out CA certificate entries — signer CN is the one that doesn't contain CA keywords
-        const caKeywords = ['TÜRKTRUST', 'TBB-', 'Bilgi İletişim', 'Elektronik Sertifika', 'Dayanak'];
+        const caKeywords = ['TÜRKTRUST', 'TURKTRUST', 'TBB-', 'Bilgi İletişim', 'Elektronik Sertifika',
+            'Dayanak', 'e-Guven', 'E-GUVEN', 'Kamu SM', 'Kamu Sertifikasyon', 'E-Tugra', 'E-TUGRA',
+            'HAVELSAN', 'Sertifika Hizmet', 'Nitelikli Elektronik'];
         const isCA = (str) => caKeywords.some(kw => str.includes(kw));
 
         const signerCN = (fields.cn || []).find(v => !isCA(v)) || '';
         const signerOU = (fields.ou || []).find(v => !isCA(v)) || '';
-        const signerL = (fields.l || []).find(v => {
-            // Signer's location is usually different from Ankara (CA location)
-            // If multiple values, prefer non-Ankara
-            return true;
-        }) || '';
-        // Find signer's location — prefer values that aren't the CA's location
+        // Signer's location — prefer values that aren't the CA's typical location
         const signerLoc = (fields.l || []).length > 1
             ? ((fields.l || []).find(v => v !== 'Ankara') || (fields.l || [])[0])
             : (fields.l || [])[0] || '';
@@ -879,7 +876,7 @@
         }
 
         function renderFooterContent(pageNum, totalPages) {
-            if (pageCount < udf.footerStartPage) return; // startPage desteği
+            if (pageNum < udf.footerStartPage) return; // startPage desteği
             const savedY = curY;
             curY = PAGE_H - bottomM + 2;
 
@@ -1530,6 +1527,15 @@
             [0b0000001011011, 13, 1600], [0b0000001100100, 13, 1664], [0b0000001100101, 13, 1728],
         ];
 
+        // Extended makeup codes shared by both white and black (1792-2560)
+        const EXTENDED_MAKEUP = [
+            [0b00000001000, 11, 1792], [0b00000001100, 11, 1856], [0b00000001101, 11, 1920],
+            [0b000000010010, 12, 1984], [0b000000010011, 12, 2048], [0b000000010100, 12, 2112],
+            [0b000000010101, 12, 2176], [0b000000010110, 12, 2240], [0b000000010111, 12, 2304],
+            [0b000000011100, 12, 2368], [0b000000011101, 12, 2432], [0b000000011110, 12, 2496],
+            [0b000000011111, 12, 2560],
+        ];
+
         // Build lookup trees for fast decoding
         function buildTree(terminal, makeup) {
             const tree = {};
@@ -1541,6 +1547,10 @@
                     tree[entry[1] + '_' + entry[0]] = { run: entry[2], type: 'M' };
                 });
             }
+            // Add extended makeup codes (shared by white and black)
+            EXTENDED_MAKEUP.forEach(entry => {
+                tree[entry[1] + '_' + entry[0]] = { run: entry[2], type: 'M' };
+            });
             return tree;
         }
         const whiteTree = buildTree(WHITE_TERMINAL, WHITE_MAKEUP);
@@ -1573,49 +1583,6 @@
         const MODE_HORIZ = 'H';
         const MODE_VERT = 'V';
 
-        function decodeMode() {
-            // Read mode prefix bits
-            let b = readBit();
-            if (b === 1) return { mode: MODE_VERT, offset: 0 }; // V(0) = 1
-
-            b = readBit();
-            if (b === 1) {
-                // H = 001
-                const b2 = readBit();
-                if (b2 === 1) return { mode: MODE_HORIZ };
-                // Extensions not supported
-                return null;
-            }
-
-            b = readBit();
-            if (b === 1) {
-                // 011 = V(+1) or VR(1)
-                return { mode: MODE_VERT, offset: 1 };
-            }
-
-            b = readBit();
-            if (b === 0) {
-                // 0001 = P
-                return { mode: MODE_PASS };
-            }
-
-            // 0001x = need more bits
-            // Actually: re-examine
-            // Let me re-do the mode codes properly:
-            // V(0) = 1
-            // VR(1) = 011
-            // VL(1) = 010
-            // H = 001
-            // P = 0001
-            // VR(2) = 000011
-            // VL(2) = 000010
-            // VR(3) = 0000011
-            // VL(3) = 0000010
-            // We already read 0001, check if this is P or V(2)/V(3)
-            return null; // unrecognized
-        }
-
-        // Proper G4 mode decoder
         function decodeMode2() {
             const b1 = readBit();
             if (b1 === 1) return { mode: MODE_VERT, offset: 0 };
@@ -1756,11 +1723,14 @@
                 if (count === 1) {
                     tags[tag] = (type === 3) ? u16(valOff) : u32(valOff);
                 } else {
-                    // Multi-value: read from offset
-                    const dataOff = u32(valOff);
+                    // Check if values fit inline (≤4 bytes) or need pointer dereference
+                    const typeSize = (type === 3) ? 2 : (type === 4) ? 4 : (type === 1) ? 1 : 4;
+                    const totalSize = count * typeSize;
+                    const dataOff = (totalSize <= 4) ? valOff : u32(valOff);
                     const vals = [];
                     for (let j = 0; j < count; j++) {
-                        if (type === 3) vals.push(u16(dataOff + j * 2));
+                        if (type === 1) vals.push(bytes[dataOff + j]);
+                        else if (type === 3) vals.push(u16(dataOff + j * 2));
                         else vals.push(u32(dataOff + j * 4));
                     }
                     tags[tag] = vals;
@@ -1790,13 +1760,15 @@
         // Collect strip data
         const stripOffsets = Array.isArray(tags[273]) ? tags[273] : [tags[273]];
         const stripByteCounts = Array.isArray(tags[279]) ? tags[279] : [tags[279]];
+        const bytes = new Uint8Array(buf);
 
-        // Concatenate all strips
+        // Concatenate all strips into one buffer — most CCITT G4 encoders write
+        // strips as a continuous bitstream (reference line carries across strips),
+        // even though the TIFF spec says each strip should be independent.
         let totalBytes = 0;
         for (const c of stripByteCounts) totalBytes += c;
         const compData = new Uint8Array(totalBytes);
         let pos = 0;
-        const bytes = new Uint8Array(buf);
         for (let s = 0; s < stripOffsets.length; s++) {
             const off = stripOffsets[s];
             const len = stripByteCounts[s];
