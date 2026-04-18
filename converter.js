@@ -67,7 +67,8 @@
     }
 
     // ── File Type Helpers ──
-    const CONVERTIBLE_EXTENSIONS = ['.udf', '.tiff', '.tif'];
+    const WORD_EXTENSIONS = ['.docx', '.doc', '.docm', '.dotx', '.dotm'];
+    const CONVERTIBLE_EXTENSIONS = ['.udf', '.tiff', '.tif', ...WORD_EXTENSIONS];
     const IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.bmp', '.gif', '.webp'];
     function getFileExtension(name) { return name.toLowerCase().substring(name.lastIndexOf('.')); }
     function isImageFile(name) { return IMAGE_EXTENSIONS.includes(getFileExtension(name)); }
@@ -76,10 +77,14 @@
     function isAcceptedFile(name) { return isConvertibleFile(name) || isZipFile(name); }
     function isTiffFile(name) { const ext = getFileExtension(name); return ext === '.tiff' || ext === '.tif'; }
     function isUdfFile(name) { return getFileExtension(name) === '.udf'; }
-    function toPdfFilename(name) { return name.replace(/\.(udf|tiff|tif|jpe?g|png|bmp|gif|webp)$/i, '.pdf'); }
+    function isWordFile(name) { return WORD_EXTENSIONS.includes(getFileExtension(name)); }
+    function toPdfFilename(name) { return name.replace(/\.(udf|tiff|tif|jpe?g|png|bmp|gif|webp|docx?m?|dotx?m?)$/i, '.pdf'); }
     function toDocxFilename(name) { return name.replace(/\.(udf)$/i, '.docx'); }
-    function toOutputFilename(name) {
-        if (outputFormat === 'docx' && isUdfFile(name)) return toDocxFilename(name);
+    function toUdfFilename(name) { return name.replace(/\.(docx?m?|dotx?m?)$/i, '.udf'); }
+    function toOutputFilename(name, format) {
+        const fmt = format || outputFormat;
+        if (fmt === 'docx' && isUdfFile(name)) return toDocxFilename(name);
+        if (fmt === 'udf' && isWordFile(name)) return toUdfFilename(name);
         return toPdfFilename(name);
     }
 
@@ -211,7 +216,7 @@
             if (selected.length === 0) return;
             if (selected.length === 1) {
                 const entry = selected[0];
-                const name = entry.status === 'passthrough' ? entry.file.name : toOutputFilename(entry.file.name);
+                const name = entry.status === 'passthrough' ? entry.file.name : toOutputFilename(entry.file.name, entry.outputFormat);
                 downloadBlob(entry.result, name);
                 trackEvent('file_download', { file_count: 1, download_type: 'selected_single' });
             } else {
@@ -250,14 +255,34 @@
 
     function updateFormatOptions() {
         if (!formatSelect) return;
-        const hasUdf = files.some(f => isUdfFile(f.file.name) && f.status === 'waiting');
+        const hasUdfWaiting = files.some(f => isUdfFile(f.file.name) && f.status === 'waiting');
+        const hasWordWaiting = files.some(f => isWordFile(f.file.name) && f.status === 'waiting');
+        const hasUdfAny = files.some(f => isUdfFile(f.file.name));
+        const hasWordAny = files.some(f => isWordFile(f.file.name));
         const docxOption = formatSelect.querySelector('option[value="docx"]');
         if (docxOption) {
-            docxOption.disabled = !hasUdf;
+            docxOption.disabled = !hasUdfAny;
         }
-        if (!hasUdf && outputFormat === 'docx') {
+        let udfOption = formatSelect.querySelector('option[value="udf"]');
+        if (!udfOption) {
+            udfOption = document.createElement('option');
+            udfOption.value = 'udf';
+            udfOption.textContent = 'UDF (.udf)';
+            formatSelect.appendChild(udfOption);
+        }
+        udfOption.disabled = !hasWordAny;
+        if (!hasUdfAny && outputFormat === 'docx') {
             formatSelect.value = 'pdf';
             outputFormat = 'pdf';
+        }
+        if (!hasWordAny && outputFormat === 'udf') {
+            formatSelect.value = 'pdf';
+            outputFormat = 'pdf';
+        }
+        // Word dosyası yüklendiğinde otomatik UDF seçilsin
+        if (hasWordWaiting && !hasUdfWaiting && outputFormat === 'pdf') {
+            formatSelect.value = 'udf';
+            outputFormat = 'udf';
         }
     }
 
@@ -287,7 +312,7 @@
                 continue;
             }
             if (!isConvertibleFile(f.name)) {
-                showToast(`"${f.name}" desteklenmeyen dosya formatı. Yalnızca .udf, .tiff, .zip ve fotoğraf dosyaları kabul edilir.`, 'warning');
+                showToast(`"${f.name}" desteklenmeyen dosya formatı. Yalnızca .udf, Word (.docx/.doc/.docm/.dotx/.dotm), .tiff, .zip ve fotoğraf dosyaları kabul edilir.`, 'warning');
                 continue;
             }
 
@@ -402,7 +427,8 @@
             const iconLabel = entry.status === 'passthrough'
                 ? getFileExtension(entry.file.name).replace('.', '').toUpperCase()
                 : isImageFile(entry.file.name) ? 'IMG'
-                : isTiffFile(entry.file.name) ? 'TIFF' : 'UDF';
+                : isTiffFile(entry.file.name) ? 'TIFF'
+                : isWordFile(entry.file.name) ? 'WORD' : 'UDF';
             const fromZipLabel = entry.fromZip ? `<span class="file-item-zip">${escapeHtml(entry.fromZip)}.zip</span>` : '';
 
             const sigInfo = entry.signatureInfo
@@ -447,7 +473,7 @@
                 e.stopPropagation();
                 const entry = files[parseInt(btn.dataset.download)];
                 if (entry && entry.result) {
-                    const name = entry.status === 'passthrough' ? entry.file.name : toOutputFilename(entry.file.name);
+                    const name = entry.status === 'passthrough' ? entry.file.name : toOutputFilename(entry.file.name, entry.outputFormat);
                     downloadBlob(entry.result, name);
                 }
             });
@@ -508,7 +534,7 @@
         }
         if (mergeBtn) {
             const selectedPdfs = selectedFiles.filter(f => f.status === 'done');
-            const hide = outputFormat === 'docx';
+            const hide = outputFormat === 'docx' || outputFormat === 'udf';
             mergeBtn.hidden = hide;
             if (!hide) {
                 mergeBtn.disabled = selectedPdfs.length < 2;
@@ -537,7 +563,8 @@
         if (progressDetail) progressDetail.textContent = '';
 
         const hasUdfFiles = pending.some(f => isUdfFile(f.file.name));
-        if (hasUdfFiles) {
+        const hasDocxToPdf = pending.some(f => isWordFile(f.file.name)) && outputFormat === 'pdf';
+        if (hasUdfFiles || hasDocxToPdf) {
             progressText.textContent = 'Fontlar yükleniyor...';
             if (progressDetail) progressDetail.textContent = 'Türkçe karakter desteği için font dosyaları indiriliyor...';
             try {
@@ -568,7 +595,7 @@
             progressBar.style.width = `${pct}%`;
             progressText.textContent = `Dosya ${processed}/${total} dönüştürülüyor...`;
             if (progressDetail) {
-                const fileType = isImageFile(files[i].file.name) ? 'Fotoğraf' : isTiffFile(files[i].file.name) ? 'TIFF' : 'UDF';
+                const fileType = isImageFile(files[i].file.name) ? 'Fotoğraf' : isTiffFile(files[i].file.name) ? 'TIFF' : isWordFile(files[i].file.name) ? 'Word' : 'UDF';
                 progressDetail.textContent = `${files[i].file.name} — ${fileType} ayrıştırılıyor...`;
             }
 
@@ -581,6 +608,12 @@
                     if (progressDetail) progressDetail.textContent = `${files[i].file.name} — TIFF → PDF oluşturuluyor...`;
                     const useOcr = ocrCheckbox && ocrCheckbox.checked;
                     result = await convertTiffToPdf(files[i].file, useOcr);
+                } else if (isWordFile(files[i].file.name) && outputFormat === 'udf') {
+                    if (progressDetail) progressDetail.textContent = `${files[i].file.name} — Word → UDF oluşturuluyor...`;
+                    result = await convertDocxToUdf(files[i].file);
+                } else if (isWordFile(files[i].file.name)) {
+                    if (progressDetail) progressDetail.textContent = `${files[i].file.name} — Word → PDF oluşturuluyor...`;
+                    result = await convertDocxToPdf(files[i].file);
                 } else if (outputFormat === 'docx') {
                     if (progressDetail) progressDetail.textContent = `${files[i].file.name} — Word belgesi oluşturuluyor...`;
                     result = await convertUdfToDocx(files[i].file);
@@ -592,6 +625,7 @@
                 files[i].result = result.blob || result;
                 files[i].signatureInfo = result.signatureInfo || null;
                 files[i].errorMsg = null;
+                files[i].outputFormat = outputFormat;
             } catch (err) {
                 console.error('Conversion error:', err);
                 files[i].status = 'error';
@@ -626,7 +660,7 @@
 
         if (outputFiles.length === 1) {
             const entry = outputFiles[0];
-            const name = entry.status === 'passthrough' ? entry.file.name : toOutputFilename(entry.file.name);
+            const name = entry.status === 'passthrough' ? entry.file.name : toOutputFilename(entry.file.name, entry.outputFormat);
             downloadBlob(entry.result, name);
             trackEvent('file_download', { file_count: 1, download_type: 'single' });
         } else if (outputFiles.length > 1) {
@@ -644,7 +678,7 @@
         if (msg.includes('TIFF')) return 'Geçerli bir TIFF dosyası değil veya dosya bozuk.';
         if (msg.includes('UTIF')) return 'TIFF dosyası işlenirken hata oluştu. Dosya formatını kontrol edin.';
         if (msg.includes('Fotoğraf')) return msg;
-        if (msg.includes('docx')) return 'Word dönüştürme hatası: ' + msg;
+        if (msg.includes('DOCX') || msg.includes('docx')) return 'DOCX dönüştürme hatası: ' + msg;
         if (msg.includes('Tesseract') || msg.includes('OCR')) return 'OCR işlemi başarısız: ' + msg;
         return 'Dönüştürme sırasında bir hata oluştu: ' + msg;
     }
@@ -1457,6 +1491,683 @@
 
         const blob = doc.output('blob');
         return { blob, signatureInfo: udf.signatureInfo };
+    }
+
+    // ── DOCX → UDF Conversion ──
+    const DOCX_NS = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main';
+    const REL_NS = 'http://schemas.openxmlformats.org/package/2006/relationships';
+    const DRAWING_NS = 'http://schemas.openxmlformats.org/drawingml/2006/main';
+    const WP_NS = 'http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing';
+    const R_NS = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
+
+    function docxNsResolver(prefix) {
+        const ns = {
+            'w': DOCX_NS,
+            'r': R_NS,
+            'a': DRAWING_NS,
+            'wp': WP_NS,
+        };
+        return ns[prefix] || null;
+    }
+
+    function getDocxChildren(parent, localName) {
+        const results = [];
+        for (const child of parent.children) {
+            if (child.localName === localName) results.push(child);
+        }
+        return results;
+    }
+
+    function getDocxChild(parent, localName) {
+        for (const child of parent.children) {
+            if (child.localName === localName) return child;
+        }
+        return null;
+    }
+
+    function getDocxAttr(el, localName) {
+        // Try namespaced first, then plain
+        return el.getAttributeNS(DOCX_NS, localName) ||
+               el.getAttributeNS(R_NS, localName) ||
+               el.getAttribute('w:' + localName) ||
+               el.getAttribute('r:' + localName) ||
+               el.getAttribute(localName) || '';
+    }
+
+    function getDocxVal(el) {
+        return getDocxAttr(el, 'val') || el?.getAttribute('w:val') || el?.getAttribute('val') || '';
+    }
+
+    async function parseDocx(file) {
+        const arrayBuffer = await file.arrayBuffer();
+        const zip = await JSZip.loadAsync(arrayBuffer);
+
+        // Parse relationships
+        const relsFile = zip.file('word/_rels/document.xml.rels');
+        const rels = {};
+        if (relsFile) {
+            const relsXml = await relsFile.async('string');
+            const relsDoc = new DOMParser().parseFromString(relsXml, 'text/xml');
+            relsDoc.querySelectorAll('Relationship').forEach(r => {
+                rels[r.getAttribute('Id')] = r.getAttribute('Target');
+            });
+        }
+
+        // Parse main document
+        const docFile = zip.file('word/document.xml');
+        if (!docFile) throw new Error('word/document.xml bulunamadı — geçerli bir DOCX dosyası değil.');
+        const docXml = await docFile.async('string');
+        const doc = new DOMParser().parseFromString(docXml, 'text/xml');
+
+        const body = doc.getElementsByTagNameNS(DOCX_NS, 'body')[0] || doc.querySelector('body');
+        if (!body) throw new Error('DOCX body elementi bulunamadı.');
+
+        let rawText = '';
+        const elements = [];
+        const images = [];
+
+        // Parse section properties for page format
+        const sectPr = getDocxChild(body, 'sectPr');
+        const pgSz = sectPr ? getDocxChild(sectPr, 'pgSz') : null;
+        // DOCX page sizes are in twips (1/20 pt)
+        const pageWidthTwip = pgSz ? parseInt(getDocxVal(pgSz) || pgSz.getAttribute('w:w') || pgSz.getAttribute('w') || '11906') : 11906;
+        const pageHeightTwip = pgSz ? parseInt(pgSz.getAttribute('w:h') || pgSz.getAttribute('h') || '16838') : 16838;
+        const pageWidthPt = pageWidthTwip / 20;
+        const pageHeightPt = pageHeightTwip / 20;
+
+        const pgMar = sectPr ? getDocxChild(sectPr, 'pgMar') : null;
+        const topMarginTwip = pgMar ? parseInt(pgMar.getAttribute('w:top') || pgMar.getAttribute('top') || '1440') : 1440;
+        const bottomMarginTwip = pgMar ? parseInt(pgMar.getAttribute('w:bottom') || pgMar.getAttribute('bottom') || '1440') : 1440;
+        const leftMarginTwip = pgMar ? parseInt(pgMar.getAttribute('w:left') || pgMar.getAttribute('left') || '1800') : 1800;
+        const rightMarginTwip = pgMar ? parseInt(pgMar.getAttribute('w:right') || pgMar.getAttribute('right') || '1800') : 1800;
+
+        const pageFormat = {
+            pageWidth: pageWidthPt,
+            pageHeight: pageHeightPt,
+            topMargin: topMarginTwip / 20,
+            bottomMargin: bottomMarginTwip / 20,
+            leftMargin: leftMarginTwip / 20,
+            rightMargin: rightMarginTwip / 20,
+        };
+
+        // Find header/footer references
+        const headerRefs = [];
+        const footerRefs = [];
+        if (sectPr) {
+            for (const child of sectPr.children) {
+                if (child.localName === 'headerReference') {
+                    const rId = child.getAttribute('r:id') || child.getAttributeNS(R_NS, 'id') || '';
+                    const type = child.getAttribute('w:type') || child.getAttribute('type') || 'default';
+                    if (rId && rels[rId]) headerRefs.push({ type, target: rels[rId] });
+                } else if (child.localName === 'footerReference') {
+                    const rId = child.getAttribute('r:id') || child.getAttributeNS(R_NS, 'id') || '';
+                    const type = child.getAttribute('w:type') || child.getAttribute('type') || 'default';
+                    if (rId && rels[rId]) footerRefs.push({ type, target: rels[rId] });
+                }
+            }
+        }
+
+        // Helper: parse a single paragraph
+        function parseDocxParagraph(pEl) {
+            const pPr = getDocxChild(pEl, 'pPr');
+            let alignment = 0;
+            let spaceAbove = 0;
+            let spaceBelow = 0;
+            let leftIndent = 0;
+            let rightIndent = 0;
+            let firstLineIndent = 0;
+
+            if (pPr) {
+                const jc = getDocxChild(pPr, 'jc');
+                if (jc) {
+                    const val = getDocxVal(jc);
+                    alignment = val === 'center' ? 1 : val === 'right' || val === 'end' ? 2 : val === 'both' || val === 'distribute' ? 3 : 0;
+                }
+                const spacing = getDocxChild(pPr, 'spacing');
+                if (spacing) {
+                    const before = spacing.getAttribute('w:before') || spacing.getAttribute('before') || '0';
+                    const after = spacing.getAttribute('w:after') || spacing.getAttribute('after') || '0';
+                    spaceAbove = parseInt(before) / 20;
+                    spaceBelow = parseInt(after) / 20;
+                }
+                const ind = getDocxChild(pPr, 'ind');
+                if (ind) {
+                    leftIndent = parseInt(ind.getAttribute('w:left') || ind.getAttribute('left') || '0') / 20;
+                    rightIndent = parseInt(ind.getAttribute('w:right') || ind.getAttribute('right') || '0') / 20;
+                    firstLineIndent = parseInt(ind.getAttribute('w:firstLine') || ind.getAttribute('firstLine') || '0') / 20;
+                }
+            }
+
+            const runs = [];
+            const startOffset = rawText.length;
+
+            for (const child of pEl.children) {
+                if (child.localName === 'r') {
+                    // Run
+                    const rPr = getDocxChild(child, 'rPr');
+                    let bold = false, italic = false, underline = false;
+                    let size = 12, color = '', fontFamily = '';
+
+                    if (rPr) {
+                        bold = !!getDocxChild(rPr, 'b') && getDocxVal(getDocxChild(rPr, 'b')) !== 'false' && getDocxVal(getDocxChild(rPr, 'b')) !== '0';
+                        // Handle <w:b/> with no val attribute (means true)
+                        if (getDocxChild(rPr, 'b') && !getDocxChild(rPr, 'b').hasAttribute('w:val') && !getDocxChild(rPr, 'b').hasAttribute('val')) bold = true;
+                        italic = !!getDocxChild(rPr, 'i') && getDocxVal(getDocxChild(rPr, 'i')) !== 'false' && getDocxVal(getDocxChild(rPr, 'i')) !== '0';
+                        if (getDocxChild(rPr, 'i') && !getDocxChild(rPr, 'i').hasAttribute('w:val') && !getDocxChild(rPr, 'i').hasAttribute('val')) italic = true;
+                        const uEl = getDocxChild(rPr, 'u');
+                        underline = !!uEl && getDocxVal(uEl) !== 'none';
+                        if (uEl && !uEl.hasAttribute('w:val') && !uEl.hasAttribute('val')) underline = true;
+                        const szEl = getDocxChild(rPr, 'sz');
+                        if (szEl) size = parseInt(getDocxVal(szEl) || szEl.getAttribute('w:val') || '24') / 2;
+                        const colorEl = getDocxChild(rPr, 'color');
+                        if (colorEl) color = getDocxVal(colorEl) || colorEl.getAttribute('w:val') || '';
+                        const rFonts = getDocxChild(rPr, 'rFonts');
+                        if (rFonts) fontFamily = rFonts.getAttribute('w:ascii') || rFonts.getAttribute('ascii') || '';
+                    }
+
+                    // Process run children
+                    for (const rc of child.children) {
+                        if (rc.localName === 't') {
+                            const text = rc.textContent;
+                            const runStartOffset = rawText.length;
+                            rawText += text;
+                            runs.push({
+                                startOffset: runStartOffset,
+                                length: text.length,
+                                bold, italic, underline, size, color, fontFamily
+                            });
+                        } else if (rc.localName === 'tab') {
+                            const runStartOffset = rawText.length;
+                            rawText += '\t';
+                            runs.push({
+                                startOffset: runStartOffset,
+                                length: 1,
+                                bold, italic, underline, size, color, fontFamily,
+                                isTab: true
+                            });
+                        } else if (rc.localName === 'br') {
+                            const brType = rc.getAttribute('w:type') || rc.getAttribute('type') || '';
+                            if (brType === 'page') {
+                                // Page break — handled as a special marker
+                                runs.push({ pageBreak: true });
+                            } else {
+                                const runStartOffset = rawText.length;
+                                rawText += '\n';
+                                runs.push({
+                                    startOffset: runStartOffset,
+                                    length: 1,
+                                    bold, italic, underline, size, color, fontFamily
+                                });
+                            }
+                        } else if (rc.localName === 'drawing') {
+                            // Image reference
+                            const blips = rc.getElementsByTagNameNS(DRAWING_NS, 'blip');
+                            if (blips.length > 0) {
+                                const blip = blips[0];
+                                const embedId = blip.getAttribute('r:embed') || blip.getAttributeNS(R_NS, 'embed') || '';
+                                if (embedId && rels[embedId]) {
+                                    const imgPath = 'word/' + rels[embedId].replace(/^\//, '');
+                                    images.push({ path: imgPath, relId: embedId });
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Add newline to rawText after each paragraph
+            rawText += '\n';
+
+            return {
+                type: 'paragraph',
+                alignment, spaceAbove, spaceBelow,
+                leftIndent, rightIndent, firstLineIndent,
+                runs,
+                textLength: rawText.length - startOffset
+            };
+        }
+
+        // Helper: parse table
+        function parseDocxTable(tblEl) {
+            const tableRows = [];
+            for (const trEl of tblEl.children) {
+                if (trEl.localName !== 'tr') continue;
+                const cells = [];
+                for (const tcEl of trEl.children) {
+                    if (tcEl.localName !== 'tc') continue;
+                    const tcPr = getDocxChild(tcEl, 'tcPr');
+                    let colspan = 1;
+                    let rowspan = 1;
+                    if (tcPr) {
+                        const gridSpan = getDocxChild(tcPr, 'gridSpan');
+                        if (gridSpan) colspan = parseInt(getDocxVal(gridSpan) || '1');
+                        const vMerge = getDocxChild(tcPr, 'vMerge');
+                        if (vMerge) {
+                            const vVal = getDocxVal(vMerge);
+                            if (vVal !== 'restart' && vVal !== '') {
+                                // This cell continues a vertical merge — skip
+                                cells.push({ paragraphs: [], colspan, rowspan: 0, vMergeContinue: true });
+                                continue;
+                            }
+                        }
+                    }
+                    const cellParagraphs = [];
+                    for (const child of tcEl.children) {
+                        if (child.localName === 'p') {
+                            cellParagraphs.push(parseDocxParagraph(child));
+                        }
+                    }
+                    cells.push({ paragraphs: cellParagraphs, colspan, rowspan });
+                }
+                tableRows.push({ cells });
+            }
+
+            // Calculate rowspan for vMerge restart cells
+            for (let c = 0; c < (tableRows[0]?.cells.length || 0); c++) {
+                let mergeStart = -1;
+                for (let r = 0; r < tableRows.length; r++) {
+                    const cell = tableRows[r]?.cells[c];
+                    if (!cell) continue;
+                    if (cell.vMergeContinue) {
+                        if (mergeStart >= 0) {
+                            tableRows[mergeStart].cells[c].rowspan++;
+                        }
+                    } else {
+                        mergeStart = r;
+                    }
+                }
+            }
+
+            return tableRows;
+        }
+
+        // Parse body children
+        for (const child of body.children) {
+            if (child.localName === 'p') {
+                elements.push(parseDocxParagraph(child));
+            } else if (child.localName === 'tbl') {
+                elements.push({ type: 'table', rows: parseDocxTable(child) });
+            }
+        }
+
+        // Parse headers
+        const headerElements = [];
+        for (const href of headerRefs) {
+            if (href.type !== 'default' && href.type !== 'first') continue;
+            const hdrFile = zip.file('word/' + href.target.replace(/^\//, ''));
+            if (!hdrFile) continue;
+            const hdrXml = await hdrFile.async('string');
+            const hdrDoc = new DOMParser().parseFromString(hdrXml, 'text/xml');
+            const hdrBody = hdrDoc.getElementsByTagNameNS(DOCX_NS, 'hdr')[0] || hdrDoc.querySelector('hdr');
+            if (hdrBody) {
+                for (const ch of hdrBody.children) {
+                    if (ch.localName === 'p') headerElements.push(parseDocxParagraph(ch));
+                }
+            }
+        }
+
+        // Parse footers
+        const footerElements = [];
+        for (const fref of footerRefs) {
+            if (fref.type !== 'default' && fref.type !== 'first') continue;
+            const ftrFile = zip.file('word/' + fref.target.replace(/^\//, ''));
+            if (!ftrFile) continue;
+            const ftrXml = await ftrFile.async('string');
+            const ftrDoc = new DOMParser().parseFromString(ftrXml, 'text/xml');
+            const ftrBody = ftrDoc.getElementsByTagNameNS(DOCX_NS, 'ftr')[0] || ftrDoc.querySelector('ftr');
+            if (ftrBody) {
+                for (const ch of ftrBody.children) {
+                    if (ch.localName === 'p') footerElements.push(parseDocxParagraph(ch));
+                }
+            }
+        }
+
+        // Extract images from ZIP
+        const imageData = {};
+        for (const img of images) {
+            const imgFile = zip.file(img.path);
+            if (imgFile) {
+                try {
+                    const data = await imgFile.async('base64');
+                    const ext = img.path.substring(img.path.lastIndexOf('.') + 1).toLowerCase();
+                    imageData[img.path] = { data, format: ext };
+                } catch (e) { /* skip unreadable images */ }
+            }
+        }
+
+        return {
+            rawText,
+            elements,
+            pageFormat,
+            headerElements,
+            footerElements,
+            images: imageData
+        };
+    }
+
+    function buildUdfXml(parsed) {
+        const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+        const pf = parsed.pageFormat;
+        // paperOrientation: 1=portrait, 2=landscape
+        const paperOrientation = pf.pageWidth > pf.pageHeight ? 2 : 1;
+
+        let xml = '<?xml version="1.0" encoding="UTF-8" ?> \n\n';
+        xml += '<template format_id="1.8" >\n';
+        xml += `<content><![CDATA[${parsed.rawText}]]></content>`;
+        xml += `<properties><pageFormat mediaSizeName="1" leftMargin="${pf.leftMargin}" rightMargin="${pf.rightMargin}" topMargin="${pf.topMargin}" bottomMargin="${pf.bottomMargin}" paperOrientation="${paperOrientation}" headerFOffset="20.0" footerFOffset="20.0" /></properties>\n`;
+        xml += '<elements resolver="hvl-default" >\n';
+
+        // Helper: convert hex color to RGB() format
+        function hexToRgb(hex) {
+            if (!hex || hex === 'auto') return '';
+            hex = hex.replace('#', '');
+            if (hex.length !== 6) return '';
+            const r = parseInt(hex.substring(0, 2), 16);
+            const g = parseInt(hex.substring(2, 4), 16);
+            const b = parseInt(hex.substring(4, 6), 16);
+            return `RGB(${r},${g},${b})`;
+        }
+
+        // Helper: render runs as UDF content elements
+        function renderRuns(runs) {
+            let out = '';
+            for (const run of runs) {
+                if (run.pageBreak) continue;
+                if (run.isTab) {
+                    out += `<tab startOffset="${run.startOffset}" length="1" />`;
+                    continue;
+                }
+                let attrs = '';
+                if (run.bold) attrs += ' bold="true"';
+                if (run.italic) attrs += ' italic="true"';
+                if (run.underline) attrs += ' underline="true"';
+                if (run.size && run.size !== 12) attrs += ` size="${run.size}"`;
+                if (run.fontFamily) attrs += ` family="${esc(run.fontFamily)}"`;
+                if (run.color) {
+                    const rgb = hexToRgb(run.color);
+                    if (rgb) attrs += ` foreground="${rgb}"`;
+                }
+                out += `<content${attrs} startOffset="${run.startOffset}" length="${run.length}" />`;
+            }
+            return out;
+        }
+
+        // Helper: render paragraph element
+        function renderParagraph(para) {
+            let attrs = '';
+            if (para.alignment) attrs += ` Alignment="${para.alignment}"`;
+            if (para.spaceAbove) attrs += ` SpaceAbove="${para.spaceAbove.toFixed(1)}"`;
+            if (para.spaceBelow) attrs += ` SpaceBelow="${para.spaceBelow.toFixed(1)}"`;
+            if (para.leftIndent) attrs += ` LeftIndent="${para.leftIndent.toFixed(1)}"`;
+            if (para.rightIndent) attrs += ` RightIndent="${para.rightIndent.toFixed(1)}"`;
+            if (para.firstLineIndent) attrs += ` FirstLineIndent="${para.firstLineIndent.toFixed(1)}"`;
+
+            return `<paragraph${attrs}>${renderRuns(para.runs)}</paragraph>`;
+        }
+
+        // Render header
+        if (parsed.headerElements.length > 0) {
+            xml += '<header startPage="1">';
+            for (const para of parsed.headerElements) {
+                xml += renderParagraph(para);
+            }
+            xml += '</header>';
+        }
+
+        // Render footer
+        if (parsed.footerElements.length > 0) {
+            xml += '<footer startPage="1">';
+            for (const para of parsed.footerElements) {
+                xml += renderParagraph(para);
+            }
+            xml += '</footer>';
+        }
+
+        // Render body elements
+        for (const el of parsed.elements) {
+            if (el.type === 'table') {
+                xml += '<table>';
+                for (const row of el.rows) {
+                    xml += '<row>';
+                    for (const cell of row.cells) {
+                        if (cell.vMergeContinue) continue;
+                        let cellAttrs = '';
+                        if (cell.colspan > 1) cellAttrs += ` colspan="${cell.colspan}"`;
+                        if (cell.rowspan > 1) cellAttrs += ` rowspan="${cell.rowspan}"`;
+                        xml += `<cell${cellAttrs}>`;
+                        for (const para of cell.paragraphs) {
+                            xml += renderParagraph(para);
+                        }
+                        xml += '</cell>';
+                    }
+                    xml += '</row>';
+                }
+                xml += '</table>';
+            } else {
+                xml += renderParagraph(el);
+            }
+        }
+
+        xml += '\n</elements>\n';
+        xml += '<styles><style name="default" description="Geçerli" family="Times New Roman" size="12" bold="false" italic="false" /><style name="hvl-default" family="Times New Roman" size="12" description="Gövde" /></styles>\n';
+        xml += '</template>\n';
+        return xml;
+    }
+
+    async function convertDocxToUdf(file) {
+        const parsed = await parseDocx(file);
+        const contentXml = buildUdfXml(parsed);
+
+        const udfZip = new JSZip();
+        udfZip.file('content.xml', contentXml);
+
+        // Copy images
+        for (const [path, img] of Object.entries(parsed.images)) {
+            const udfPath = 'images/' + path.substring(path.lastIndexOf('/') + 1);
+            udfZip.file(udfPath, img.data, { base64: true });
+        }
+
+        const blob = await udfZip.generateAsync({ type: 'blob', compression: 'DEFLATE' });
+        return blob;
+    }
+
+    async function convertDocxToPdf(file) {
+        await loadFonts();
+        const parsed = await parseDocx(file);
+        const pg = parsed.pageFormat;
+
+        const PT_TO_MM_LOCAL = 0.3528;
+        const widthMm = pg.pageWidth * PT_TO_MM_LOCAL;
+        const heightMm = pg.pageHeight * PT_TO_MM_LOCAL;
+        const isLandscape = widthMm > heightMm;
+        const PAGE_W = isLandscape ? Math.max(widthMm, heightMm) : Math.min(widthMm, heightMm);
+        const PAGE_H = isLandscape ? Math.min(widthMm, heightMm) : Math.max(widthMm, heightMm);
+        const leftM = Math.max(pg.leftMargin * PT_TO_MM_LOCAL, 10);
+        const rightM = Math.max(pg.rightMargin * PT_TO_MM_LOCAL, 10);
+        const topM = Math.max(pg.topMargin * PT_TO_MM_LOCAL, 10);
+        const bottomM = Math.max(pg.bottomMargin * PT_TO_MM_LOCAL, 10);
+        const usableW = PAGE_W - leftM - rightM;
+
+        const orientation = isLandscape ? 'landscape' : 'portrait';
+        const doc = new jsPDF({ orientation, unit: 'mm', format: [PAGE_W, PAGE_H] });
+        registerFonts(doc);
+
+        let curY = topM;
+        let pageCount = 1;
+
+        function addNewPage() {
+            doc.addPage([PAGE_W, PAGE_H], orientation);
+            pageCount++;
+            curY = topM;
+        }
+
+        function ensureSpace(needed) {
+            if (curY + needed > PAGE_H - bottomM) {
+                addNewPage();
+            }
+        }
+
+        // Render parsed elements to PDF
+        for (const el of parsed.elements) {
+            if (el.type === 'table') {
+                // Simple table rendering
+                for (const row of el.rows) {
+                    let maxRowH = 5;
+                    const cellW = usableW / Math.max(row.cells.filter(c => !c.vMergeContinue).length, 1);
+
+                    ensureSpace(maxRowH + 2);
+                    let cellX = leftM;
+
+                    for (const cell of row.cells) {
+                        if (cell.vMergeContinue) continue;
+                        const w = cellW * cell.colspan;
+                        doc.rect(cellX, curY, w, maxRowH);
+
+                        let cellY = curY + 1;
+                        for (const para of cell.paragraphs) {
+                            const text = parsed.rawText.substring(
+                                para.runs[0]?.startOffset || 0,
+                                (para.runs[para.runs.length - 1]?.startOffset || 0) + (para.runs[para.runs.length - 1]?.length || 0)
+                            );
+                            if (!text.trim()) continue;
+
+                            const firstRun = para.runs[0] || {};
+                            const fontSize = firstRun.size || 12;
+                            const fontSizeMm = fontSize * PT_TO_MM_LOCAL;
+
+                            doc.setFontSize(fontSize);
+                            let fontStyle = 'normal';
+                            if (firstRun.bold && firstRun.italic) fontStyle = 'bolditalic';
+                            else if (firstRun.bold) fontStyle = 'bold';
+                            else if (firstRun.italic) fontStyle = 'italic';
+                            doc.setFont('NotoSerif', fontStyle);
+
+                            const lines = doc.splitTextToSize(text, w - 2);
+                            doc.text(lines, cellX + 1, cellY + fontSizeMm);
+                            cellY += lines.length * fontSizeMm * 1.3;
+                        }
+
+                        if (cellY - curY > maxRowH) maxRowH = cellY - curY + 1;
+                        cellX += w;
+                    }
+
+                    // Redraw cells with correct height
+                    cellX = leftM;
+                    for (const cell of row.cells) {
+                        if (cell.vMergeContinue) continue;
+                        const w = cellW * cell.colspan;
+                        doc.rect(cellX, curY, w, maxRowH);
+                        cellX += w;
+                    }
+
+                    curY += maxRowH;
+                }
+            } else {
+                // Paragraph
+                const paraText = parsed.rawText.substring(
+                    el.runs[0]?.startOffset || 0,
+                    (el.runs[el.runs.length - 1]?.startOffset || 0) + (el.runs[el.runs.length - 1]?.length || 0)
+                ).replace(/\n$/, '');
+
+                if (!paraText.trim() && el.runs.length === 0) {
+                    curY += 3;
+                    continue;
+                }
+
+                const spaceAboveMm = el.spaceAbove * PT_TO_MM_LOCAL;
+                const spaceBelowMm = el.spaceBelow * PT_TO_MM_LOCAL;
+                curY += spaceAboveMm;
+
+                // Render runs with formatting
+                let runX = leftM + (el.leftIndent * PT_TO_MM_LOCAL);
+                const maxX = PAGE_W - rightM;
+                let firstLine = true;
+
+                for (const run of el.runs) {
+                    if (run.pageBreak) {
+                        addNewPage();
+                        runX = leftM + (el.leftIndent * PT_TO_MM_LOCAL);
+                        continue;
+                    }
+                    if (run.isTab) {
+                        runX += 15; // default tab
+                        continue;
+                    }
+
+                    const text = parsed.rawText.substring(run.startOffset, run.startOffset + run.length);
+                    if (!text) continue;
+
+                    const fontSize = run.size || 12;
+                    const fontSizeMm = fontSize * PT_TO_MM_LOCAL;
+                    doc.setFontSize(fontSize);
+
+                    let fontStyle = 'normal';
+                    if (run.bold && run.italic) fontStyle = 'bolditalic';
+                    else if (run.bold) fontStyle = 'bold';
+                    else if (run.italic) fontStyle = 'italic';
+                    doc.setFont('NotoSerif', fontStyle);
+
+                    if (run.color) {
+                        const hex = run.color.replace('#', '');
+                        if (hex.length === 6 && hex !== 'auto') {
+                            doc.setTextColor(parseInt(hex.substring(0, 2), 16), parseInt(hex.substring(2, 4), 16), parseInt(hex.substring(4, 6), 16));
+                        } else {
+                            doc.setTextColor(0);
+                        }
+                    } else {
+                        doc.setTextColor(0);
+                    }
+
+                    if (firstLine && el.firstLineIndent) {
+                        runX += el.firstLineIndent * PT_TO_MM_LOCAL;
+                        firstLine = false;
+                    }
+
+                    const availW = maxX - runX;
+                    const lines = doc.splitTextToSize(text, availW > 0 ? availW : usableW);
+                    const lineH = fontSizeMm * 1.35;
+
+                    ensureSpace(lineH);
+
+                    // Alignment
+                    for (let li = 0; li < lines.length; li++) {
+                        let textX = runX;
+                        if (el.alignment === 1) {
+                            const tw = doc.getTextWidth(lines[li]);
+                            textX = leftM + (usableW - tw) / 2;
+                        } else if (el.alignment === 2) {
+                            const tw = doc.getTextWidth(lines[li]);
+                            textX = maxX - tw;
+                        }
+
+                        ensureSpace(lineH);
+                        doc.text(lines[li], textX, curY + fontSizeMm);
+
+                        if (run.underline) {
+                            const tw = doc.getTextWidth(lines[li]);
+                            doc.setLineWidth(0.2);
+                            doc.line(textX, curY + fontSizeMm + 0.5, textX + tw, curY + fontSizeMm + 0.5);
+                        }
+
+                        if (li < lines.length - 1) {
+                            curY += lineH;
+                            runX = leftM + (el.leftIndent * PT_TO_MM_LOCAL);
+                        }
+                    }
+
+                    if (lines.length > 0) {
+                        runX = leftM + (el.leftIndent * PT_TO_MM_LOCAL) + doc.getTextWidth(lines[lines.length - 1]);
+                    }
+                }
+
+                curY += (el.runs[0]?.size || 12) * PT_TO_MM_LOCAL * 1.35;
+                curY += spaceBelowMm;
+            }
+        }
+
+        const blob = doc.output('blob');
+        return blob;
     }
 
     // ── Word (.docx) Export ──
@@ -2388,7 +3099,7 @@
     async function downloadAllAsZip(outputFiles) {
         const zip = new JSZip();
         outputFiles.forEach(entry => {
-            const name = entry.status === 'passthrough' ? entry.file.name : toOutputFilename(entry.file.name);
+            const name = entry.status === 'passthrough' ? entry.file.name : toOutputFilename(entry.file.name, entry.outputFormat);
             zip.file(name, entry.result);
         });
 
