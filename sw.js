@@ -3,7 +3,7 @@
  * Caches all critical assets for offline use.
  */
 
-const CACHE_NAME = 'udf-converter-v4';
+const CACHE_NAME = 'udf-converter-v5';
 
 const CRITICAL_ASSETS = [
     '/',
