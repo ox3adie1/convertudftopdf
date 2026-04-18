@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UDF Formatı Teknik Spesifikasyonu: ZIP, XML, RTF ve PKCS#7 Anatomisi | convertudftopdf.com</title>
+    <meta name="description" content="UDF formatının iç yapısı: ZIP arşivi, content.xml şeması, gömülü RTF fragmentleri ve PKCS#7 dijital imza katmanı. Geliştiriciler için UYAP döküman format spec'i.">
+    <meta name="keywords" content="udf formatı, udf iç yapısı, udf dosyası teknik, udf xml, udf pkcs7, udf format spec, udf dosyası nasıl çalışır, udf reverse engineer, uyap document format yapısı, udf parser">
+    <meta name="robots" content="index, follow">
+    <meta name="theme-color" content="#2563eb">
+    <meta name="google-site-verification" content="DQXlhI8zcKV054poHs1OgD5TbN-FSfMkcjTzW4NOLMI">
+    <meta property="og:title" content="UDF Formatı Teknik Spesifikasyonu: ZIP, XML, RTF ve PKCS#7 Anatomisi">
+    <meta property="og:description" content="UDF dosyasının iç yapısını bit düzeyinde inceliyoruz. ZIP arşivi, content.xml şeması, RTF fragmentleri ve dijital imza katmanının anatomisi.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://convertudftopdf.com/udf-format-spec.html">
+    <meta property="og:image" content="https://convertudftopdf.com/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:locale" content="tr_TR">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@plajterligi">
+    <meta name="twitter:title" content="UDF Formatı Teknik Spesifikasyonu: ZIP, XML, RTF ve PKCS#7 Anatomisi">
+    <meta name="twitter:description" content="UDF dosyasının iç yapısı: ZIP, XML, RTF ve PKCS#7. Geliştiriciler için kapsamlı teknik rehber.">
+    <meta name="twitter:image" content="https://convertudftopdf.com/og-image.png">
+    <link rel="canonical" href="https://convertudftopdf.com/udf-format-spec.html">
+    <link rel="alternate" hreflang="tr" href="https://convertudftopdf.com/udf-format-spec.html">
+    <link rel="alternate" hreflang="x-default" href="https://convertudftopdf.com/udf-format-spec.html">
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="manifest" href="manifest.json">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <meta name="google-adsense-account" content="ca-pub-4410660717929931">
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4410660717929931" crossorigin="anonymous"></script>
+    <!-- Google Analytics 4 -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-2QDTPQTFQ8"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-2QDTPQTFQ8');
+    </script>
+    <link rel="stylesheet" href="style.css">
+
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+            {
+                "@type": "ListItem",
+                "position": 1,
+                "name": "Ana Sayfa",
+                "item": "https://convertudftopdf.com/"
+            },
+            {
+                "@type": "ListItem",
+                "position": 2,
+                "name": "UDF Formatı Teknik Spesifikasyonu",
+                "item": "https://convertudftopdf.com/udf-format-spec.html"
+            }
+        ]
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "TechArticle",
+        "headline": "UDF Formatı Teknik Spesifikasyonu: ZIP, XML, RTF ve PKCS#7 Anatomisi",
+        "description": "UDF dosyasının iç yapısı: ZIP arşivi, content.xml şeması, gömülü RTF fragmentleri ve PKCS#7 dijital imza katmanı. Geliştiriciler için UYAP döküman format spec'i.",
+        "author": {
+            "@type": "Organization",
+            "name": "convertudftopdf.com",
+            "url": "https://convertudftopdf.com"
+        },
+        "editor": {
+            "@type": "Person",
+            "name": "Hukuk Teknolojisi Editörü"
+        },
+        "publisher": {
+            "@type": "Organization",
+            "name": "convertudftopdf.com",
+            "url": "https://convertudftopdf.com",
+            "logo": {
+                "@type": "ImageObject",
+                "url": "https://convertudftopdf.com/favicon.svg"
+            }
+        },
+        "datePublished": "2026-04-18",
+        "dateModified": "2026-04-18",
+        "proficiencyLevel": "Expert",
+        "dependencies": "JSZip, DOMParser, PKCS#7 / CMS bilgisi",
+        "mainEntityOfPage": {
+            "@type": "WebPage",
+            "@id": "https://convertudftopdf.com/udf-format-spec.html"
+        },
+        "image": "https://convertudftopdf.com/og-image.png"
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "Article",
+        "headline": "UDF Formatı Teknik Spesifikasyonu: ZIP, XML, RTF ve PKCS#7 Anatomisi",
+        "description": "UDF formatının ZIP konteyneri, content.xml şeması, RTF fragmentleri ve PKCS#7 imza katmanı ile ilgili kapsamlı teknik dokümantasyon.",
+        "author": {
+            "@type": "Organization",
+            "name": "convertudftopdf.com",
+            "url": "https://convertudftopdf.com"
+        },
+        "editor": {
+            "@type": "Person",
+            "name": "Hukuk Teknolojisi Editörü"
+        },
+        "publisher": {
+            "@type": "Organization",
+            "name": "convertudftopdf.com",
+            "url": "https://convertudftopdf.com",
+            "logo": {
+                "@type": "ImageObject",
+                "url": "https://convertudftopdf.com/favicon.svg"
+            }
+        },
+        "datePublished": "2026-04-18",
+        "dateModified": "2026-04-18",
+        "mainEntityOfPage": {
+            "@type": "WebPage",
+            "@id": "https://convertudftopdf.com/udf-format-spec.html"
+        },
+        "image": "https://convertudftopdf.com/og-image.png"
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+            {
+                "@type": "Question",
+                "name": "UDF dosyası gerçekten bir ZIP arşivi midir?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Evet. UDF dosyası standart bir ZIP arşivinin yeniden adlandırılmış halidir. Uzantıyı .zip olarak değiştirdiğinizde içindeki content.xml ve ek kaynak dosyalarına erişebilirsiniz. Ancak içerik XML yapısı UYAP'a özgüdür ve standart bir açık spesifikasyonu kamuya duyurulmamıştır."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "UDF için açık kaynak bir parser var mı?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Tam özellikli, aktif geliştirilen bir açık kaynak parser bulunmuyor. Bizim convertudftopdf.com dönüştürücümüz JSZip ve tarayıcı DOMParser'ı kullanarak UDF iç yapısını parse eden en kapsamlı JavaScript uygulamasıdır. Kod tamamen istemci tarafında çalışır."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "PKCS#7 imza katmanı her UDF dosyasında var mı?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Hayır, PKCS#7 imza katmanı opsiyoneldir. Yalnızca e-imza ile imzalanmış mahkeme kararı, tensip zaptı gibi resmi belgelerde bulunur. Taslak belgelerde veya henüz imzalanmamış dilekçelerde imza bloğu yoktur."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "UDF neden RTF fragmentleri içeriyor?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "UDF XML'i temel yapıyı (paragraflar, tablolar, stiller) tanımlar ancak bazı zengin metin alanları ve gömülü nesneler RTF formatında saklanır. Bu, UYAP Döküman Editörü'nün Microsoft Word ile daha iyi birlikte çalışabilmesi ve Windows'un yerleşik RTF renderer'ını kullanabilmesi için yapılmış bir tasarım kararıdır."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "UDF formatı neden açık standart değil?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "UDF, Adalet Bakanlığı UYAP ekosistemi için geliştirilmiş kurumsal bir formattır. Resmi bir ISO veya IETF standardizasyon süreci bulunmuyor. Format detayları UYAP Döküman Editörü binary'sinin davranışından ve gerçek UDF örneklerinin tersine mühendisliğinden çıkarılmıştır."
+                }
+            }
+        ]
+    }
+    </script>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://*.googlesyndication.com https://*.google.com https://*.doubleclick.net https://*.googleadservices.com 'unsafe-inline'; style-src 'self' https://fonts.googleapis.com 'unsafe-inline'; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://*.googlesyndication.com https://*.google.com https://*.doubleclick.net; frame-src https://*.googlesyndication.com https://*.doubleclick.net https://*.google.com; frame-ancestors 'self';">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+    <meta http-equiv="Permissions-Policy" content="geolocation=(), microphone=(), camera=(), payment=()">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <a href="/" class="logo">
+                <svg class="logo-icon" viewBox="0 0 32 32" fill="none">
+                    <rect width="32" height="32" rx="8" fill="#2563eb"/>
+                    <path d="M8 10h6v12H8V10zm10 0h6v12h-6V10z" fill="#fff" opacity="0.3"/>
+                    <path d="M13 16l6-4v8l-6-4z" fill="#fff"/>
+                </svg>
+                <span>convertudftopdf<small>.com</small></span>
+            </a>
+            <nav class="nav">
+                <a href="/">Ana Sayfa</a>
+                <a href="/#converter">Dönüştür</a>
+                <a href="/#faq">SSS</a>
+            </nav>
+        </div>
+    </header>
+
+    <div class="article-content">
+        <h1>UDF Formatı Teknik Spesifikasyonu: ZIP, XML, RTF ve PKCS#7 Anatomisi</h1>
+        <p class="article-meta">Son güncelleme: 18 Nisan 2026 &middot; 12 dk okuma</p>
+
+        <p>UYAP (Ulusal Yargı Ağı Platformu) tarafından kullanılan <strong>UDF (UYAP Document Format)</strong>, Türkiye yargı sistemindeki neredeyse tüm elektronik belgelerin taşıyıcısıdır. Mahkeme kararından avukat dilekçesine, bilirkişi raporundan tensip zaptına kadar milyonlarca belge bu formatla dolaşır. Ancak Türkçe teknik literatürde UDF'in iç yapısına dair kapsamlı bir spesifikasyon dokümanı bulunmuyor. Bu yazı, UDF formatını <strong>geliştiriciler ve teknik okuyucular</strong> için bit düzeyinde açıklamayı amaçlıyor: ZIP konteyneri, XML şeması, gömülü RTF fragmentleri ve PKCS#7 dijital imza katmanı nasıl katmanlandırılmış?</p>
+
+        <p>Aşağıdaki bilgiler, on binlerce gerçek UDF dosyasını tarayıcıda parse eden <a href="/">convertudftopdf.com</a> dönüştürücüsünün geliştirme sürecinde elde edilmiş pratik gözlemlere dayanır. Resmi bir UYAP yayını değildir; ancak format üzerinde çalışan herkesin başlangıç noktası olabilir.</p>
+
+        <div class="info-box">
+            <p><strong>Bu yazı iki hedef kitleye hitap eder:</strong> UDF'i parse eden yazılım geliştirenler (JSZip, libxml, CMS kütüphaneleri kullananlar) ve formatın "içinde ne var?" sorusuna cevap arayan hukuk uzmanları. Terminoloji ilk kez geçtiğinde kısa bir açıklama bulacaksınız.</p>
+        </div>
+
+        <h2>1. UDF Nedir: Üst Düzey Bakış</h2>
+        <p>UDF, Adalet Bakanlığı'nın UYAP altyapısı için geliştirilmiş <strong>kapalı bir belge formatıdır</strong>. Dosya uzantısı <code>.udf</code> olan her belge, aslında bir <em>konteyner dosyadır</em>: içinde zengin metin içeriği (paragraflar, tablolar, stiller), isteğe bağlı olarak dijital imza bloğu ve bazen gömülü nesneler (küçük resimler, logo fragmentleri) barındırır.</p>
+
+        <p>Format, MIME tipi olarak genellikle <code>application/octet-stream</code> veya özel bir <code>application/vnd.uyap.udf</code> varyantı altında sunulur. IANA'da tescilli değildir. UDF'in temel tasarım hedefleri şunlardır:</p>
+        <ul>
+            <li><strong>Bütünlük:</strong> Belge içeriğinin dijital imzayla değişmezliğini garanti etmek.</li>
+            <li><strong>Biçim kararlılığı:</strong> Farklı cihazlarda aynı görsel çıktıyı üretmek (pagination dahil).</li>
+            <li><strong>Yargısal meta-veri:</strong> Dava numarası, mahkeme, hakim bilgisi gibi alanları yapısal olarak saklamak.</li>
+            <li><strong>Ekosistem bağlılığı:</strong> Belgenin yalnızca UYAP Döküman Editörü ile üretilmesi/düzenlenmesi.</li>
+        </ul>
+
+        <p>UDF, MS Office'in DOCX veya LibreOffice'in ODT formatlarına yapısal olarak benzer: hepsi bir <strong>ZIP konteyneri içine yerleştirilmiş XML tabanlı içerik</strong> modelini kullanır. Ancak DOCX/ODT açık spesifikasyonlara sahipken, UDF kapalı bir format olarak kalmıştır.</p>
+
+        <h2>2. UDF Dosyası Açıldığında: Bir ZIP Arşivi</h2>
+        <p>UDF spesifikasyonundaki en önemli keşif: <strong>UDF aslında standart bir ZIP arşividir.</strong> Uzantıyı <code>.zip</code> olarak yeniden adlandırdığınızda veya doğrudan <code>unzip</code> komutuyla açtığınızda iç yapı görünür hale gelir:</p>
+
+        <pre style="background:#f5f5f5;padding:12px;border-radius:6px;font-family:monospace;overflow-x:auto;"><code># Terminalde hızlı inceleme
+$ file karar.udf
+karar.udf: Zip archive data, at least v2.0 to extract
+
+$ unzip -l karar.udf
+Archive:  karar.udf
+  Length      Date    Time    Name
+---------  ---------- -----   ----
+    14823  2026-03-14 11:42   content.xml
+     2048  2026-03-14 11:42   signature.p7s
+      512  2026-03-14 11:42   binary/header.jpg
+---------                     -------
+    17383                     3 files
+
+$ unzip karar.udf -d karar_extracted/
+$ ls karar_extracted/
+content.xml  signature.p7s  binary/</code></pre>
+
+        <p>ZIP konteynerinin içinde tipik olarak bulunan bileşenler:</p>
+        <ul>
+            <li><code>content.xml</code> — Belgenin birincil meta-veri ve içerik dosyası. <strong>Her UDF'de zorunludur.</strong></li>
+            <li><code>signature.p7s</code> veya benzeri — PKCS#7 / CMS formatında dijital imza bloğu (opsiyonel).</li>
+            <li><code>binary/</code> dizini — Gömülü görseller, logo parçaları veya RTF fragmentleri.</li>
+            <li><code>styles/</code> veya gömülü stil tanımları (bazı sürümlerde).</li>
+        </ul>
+
+        <div class="info-box">
+            <p><strong>Geliştirici notu:</strong> Biz <a href="/">convertudftopdf.com</a>'da UDF dosyalarını açmak için tarayıcıda <a href="https://stuk.github.io/jszip/" rel="nofollow noopener" target="_blank">JSZip</a> kütüphanesini kullanıyoruz. Dosya <code>File</code> nesnesi olarak alınır, <code>JSZip.loadAsync(file)</code> ile açılır, ardından <code>zip.file("content.xml").async("string")</code> ile XML içeriği alınır. Tüm işlem kullanıcının tarayıcısında gerçekleşir — bu, avukat gizliliği için kritik bir tasarım kararıdır.</p>
+        </div>
+
+        <h2>3. content.xml Şeması: Belgenin Yapı Taşı</h2>
+        <p><code>content.xml</code>, UDF'in kalbidir. UTF-8 kodlamalı, standart bir XML dosyasıdır ve belgenin tüm yapısal bilgisini taşır. Root elementi genellikle <code>&lt;template&gt;</code> veya <code>&lt;document&gt;</code> adındadır ve altında birkaç ana seksiyon bulunur:</p>
+
+        <pre style="background:#f5f5f5;padding:12px;border-radius:6px;font-family:monospace;overflow-x:auto;"><code>&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;template&gt;
+  &lt;properties&gt;
+    &lt;pageFormat width="595" height="842"
+                marginTop="60" marginBottom="60"
+                marginLeft="70" marginRight="70"/&gt;
+    &lt;documentInfo
+        documentType="KARAR"
+        createdBy="UYAP Dokuman Editoru 5.x"
+        createdDate="2026-03-14T11:42:00"/&gt;
+  &lt;/properties&gt;
+
+  &lt;elements resolver="hvl-oncesi"&gt;
+    &lt;paragraph Alignment="0" LineSpacing="1.15"
+               FirstLineIndent="0" LeftIndent="0"&gt;
+      &lt;content startOffset="0" length="42"
+               Family="Times New Roman" Size="12"
+               Bold="false" Italic="false"&gt;
+        T.C. ISTANBUL 1. ASLIYE HUKUK MAHKEMESI
+      &lt;/content&gt;
+    &lt;/paragraph&gt;
+
+    &lt;paragraph Alignment="2"&gt;
+      &lt;content startOffset="42" length="14"
+               Family="Times New Roman" Size="12"
+               Bold="true"&gt;
+        GEREKCELI KARAR
+      &lt;/content&gt;
+    &lt;/paragraph&gt;
+
+    &lt;table border="1" width="100%"&gt;
+      &lt;row&gt;
+        &lt;cell colspan="1"&gt;
+          &lt;paragraph&gt;&lt;content&gt;Dosya No&lt;/content&gt;&lt;/paragraph&gt;
+        &lt;/cell&gt;
+        &lt;cell&gt;
+          &lt;paragraph&gt;&lt;content&gt;2026/123&lt;/content&gt;&lt;/paragraph&gt;
+        &lt;/cell&gt;
+      &lt;/row&gt;
+    &lt;/table&gt;
+  &lt;/elements&gt;
+
+  &lt;headers&gt;
+    &lt;header type="default"&gt;
+      &lt;paragraph Alignment="1"&gt;
+        &lt;content Size="10"&gt;Sayfa {PAGE} / {TOTAL}&lt;/content&gt;
+      &lt;/paragraph&gt;
+    &lt;/header&gt;
+  &lt;/headers&gt;
+
+  &lt;footers&gt;
+    &lt;footer type="default"&gt; ... &lt;/footer&gt;
+  &lt;/footers&gt;
+&lt;/template&gt;</code></pre>
+
+        <p>Ana element kategorileri:</p>
+        <ul>
+            <li><strong><code>&lt;properties&gt;</code></strong> — Sayfa boyutu (point cinsinden), kenar boşlukları, belge türü ve oluşturma meta-verisi.</li>
+            <li><strong><code>&lt;elements&gt;</code></strong> — Ana içerik: paragraph, table, image elementlerinin sıralı bir listesi.</li>
+            <li><strong><code>&lt;paragraph&gt;</code></strong> — Bir veya birden fazla <code>&lt;content&gt;</code> segmenti içerir. Her segment kendi biçimlendirmesine sahip olabilir.</li>
+            <li><strong><code>&lt;content&gt;</code></strong> — Gerçek metin veya zengin içerik taşıyıcısı. <code>startOffset</code> ve <code>length</code> alanları belgenin düz metin gösterimindeki karakter indekslerini tutar.</li>
+            <li><strong><code>&lt;table&gt;</code>, <code>&lt;row&gt;</code>, <code>&lt;cell&gt;</code></strong> — HTML'e benzer tablo modeli.</li>
+            <li><strong><code>&lt;headers&gt;</code> / <code>&lt;footers&gt;</code></strong> — Sayfa üst ve alt bilgisi. <code>{PAGE}</code>, <code>{TOTAL}</code> gibi placeholder'lar render sırasında değiştirilir.</li>
+        </ul>
+
+        <h2>4. Metin Biçimlendirmesi: Stil Özellikleri</h2>
+        <p>UDF, biçimlendirmeyi CSS benzeri bir "cascade" yerine <strong>her <code>&lt;content&gt;</code> segmentinde tam özellik seti</strong> olarak saklar. Bu, parser açısından hayatı kolaylaştırır (miras kuralları yoktur) ama dosya boyutunu büyütür. Tipik özellikler:</p>
+
+        <pre style="background:#f5f5f5;padding:12px;border-radius:6px;font-family:monospace;overflow-x:auto;"><code>&lt;content
+    Family="Times New Roman"      &lt;!-- yazi tipi --&gt;
+    Size="12"                      &lt;!-- punto --&gt;
+    Bold="true"                    &lt;!-- kalin --&gt;
+    Italic="false"                 &lt;!-- italik --&gt;
+    Underline="true"               &lt;!-- alti cizili --&gt;
+    Strikethrough="false"          &lt;!-- ustu cizili --&gt;
+    Foreground="0,0,0"             &lt;!-- metin rengi (R,G,B) --&gt;
+    Background="255,255,255"       &lt;!-- arka plan --&gt;
+    Offset="Superscript"           &lt;!-- ust/alt simge --&gt;
+    startOffset="120"
+    length="25"&gt;
+  Ornek zengin metin
+&lt;/content&gt;</code></pre>
+
+        <p>Paragraf seviyesinde hizalama (<code>Alignment</code>) için yaygın değerler:</p>
+        <ul>
+            <li><code>Alignment="0"</code> — Sola yaslı (varsayılan)</li>
+            <li><code>Alignment="1"</code> — Ortalı</li>
+            <li><code>Alignment="2"</code> — Sağa yaslı</li>
+            <li><code>Alignment="3"</code> — İki yana yaslı (justify)</li>
+        </ul>
+
+        <p>Satır aralığı (<code>LineSpacing</code>) ondalık değer olarak verilir: <code>1.0</code>, <code>1.15</code>, <code>1.5</code>, <code>2.0</code>. Girinti alanları (<code>FirstLineIndent</code>, <code>LeftIndent</code>, <code>RightIndent</code>) point cinsindendir; 1 cm yaklaşık 28.35 point'e denk gelir.</p>
+
+        <h2>5. Tablolar ve Hücre Birleştirme</h2>
+        <p>Hukuki belgelerde (özellikle tensip zaptı ve karar üst bloklarında) tablolar yaygın kullanılır. UDF tablo modeli HTML'in <code>&lt;table&gt;</code> elementine benzer ancak <strong>tab stop bazlı bir ızgara</strong> kullanır — CSS grid değil.</p>
+
+        <pre style="background:#f5f5f5;padding:12px;border-radius:6px;font-family:monospace;overflow-x:auto;"><code>&lt;table border="1" width="100%" cellpadding="4"&gt;
+  &lt;row height="30"&gt;
+    &lt;cell colspan="2" rowspan="1"
+          background="230,230,230"
+          verticalAlignment="center"&gt;
+      &lt;paragraph Alignment="1"&gt;
+        &lt;content Bold="true"&gt;DAVA BILGILERI&lt;/content&gt;
+      &lt;/paragraph&gt;
+    &lt;/cell&gt;
+  &lt;/row&gt;
+  &lt;row&gt;
+    &lt;cell width="30%"&gt;
+      &lt;paragraph&gt;&lt;content&gt;Mahkeme&lt;/content&gt;&lt;/paragraph&gt;
+    &lt;/cell&gt;
+    &lt;cell width="70%"&gt;
+      &lt;paragraph&gt;&lt;content&gt;Istanbul 3. Asliye Hukuk&lt;/content&gt;&lt;/paragraph&gt;
+    &lt;/cell&gt;
+  &lt;/row&gt;
+&lt;/table&gt;</code></pre>
+
+        <p>Önemli hücre özellikleri:</p>
+        <ul>
+            <li><code>colspan</code> / <code>rowspan</code> — Hücre birleştirme. HTML semantiği ile aynıdır.</li>
+            <li><code>width</code> — Yüzde veya point cinsinden genişlik.</li>
+            <li><code>verticalAlignment</code> — <code>top</code>, <code>center</code>, <code>bottom</code>.</li>
+            <li><code>background</code> — Hücre arka plan rengi (R,G,B üçlüsü).</li>
+        </ul>
+
+        <p>Parser yazarken dikkat edilmesi gereken nokta: UDF tablolarında <strong>eksik hücreler</strong> ve <strong>birleştirilmiş hücre sonrası atlamalar</strong> kolayca offset hatası üretebilir. Güvenli bir yaklaşım, her satır için beklenen sütun sayısını takip etmek ve colspan toplamını doğrulamaktır.</p>
+
+        <h2>6. Tab Stops ve Paragraf Ayarları</h2>
+        <p>UDF, klasik daktilo/Word tarzı <strong>tab stop</strong> modelini desteklemeye devam eder — modern web'de nadir, ancak hukuki belgelerde hala sıkça kullanılır. Her paragrafa birden fazla tab stop atanabilir:</p>
+
+        <pre style="background:#f5f5f5;padding:12px;border-radius:6px;font-family:monospace;overflow-x:auto;"><code>&lt;paragraph Alignment="0"&gt;
+  &lt;tabStops&gt;
+    &lt;tabStop position="85"  alignment="LEFT"/&gt;
+    &lt;tabStop position="280" alignment="CENTER"/&gt;
+    &lt;tabStop position="510" alignment="RIGHT" leader="DOTS"/&gt;
+  &lt;/tabStops&gt;
+  &lt;content&gt;Davaci:\tAhmet Yilmaz\t\t01.01.2026&lt;/content&gt;
+&lt;/paragraph&gt;</code></pre>
+
+        <p>Özellikler:</p>
+        <ul>
+            <li><code>position</code> — Sayfa solundan point cinsinden mesafe.</li>
+            <li><code>alignment</code> — <code>LEFT</code>, <code>CENTER</code>, <code>RIGHT</code>, <code>DECIMAL</code>.</li>
+            <li><code>leader</code> — Tab öncesi doldurulacak karakter tipi: <code>NONE</code>, <code>DOTS</code>, <code>LINE</code>, <code>UNDERLINE</code>.</li>
+        </ul>
+
+        <p>PDF veya HTML render'ı yaparken tab stop'ları simüle etmek zorlu bir iştir. Pratik bir strateji: tab karakterlerini koordinat tabanlı metin yerleşimine (jsPDF'in <code>doc.text(x, y, str)</code> API'si) çevirmektir.</p>
+
+        <h2>7. Gömülü RTF İçeriği</h2>
+        <p>UDF, "saf" bir XML format değildir. Bazı alanlar — özellikle <strong>UYAP Döküman Editörü'nün Word'den kopyala-yapıştır desteklediği bölgeler</strong> — RTF (Rich Text Format) fragmentleri olarak saklanır. Bu, XML içinde CDATA veya base64 bloğu olarak görünür:</p>
+
+        <pre style="background:#f5f5f5;padding:12px;border-radius:6px;font-family:monospace;overflow-x:auto;"><code>&lt;content type="rtf" encoding="base64"&gt;
+e1xydGYxXGFuc2lcZGVmZjB7XGZvbnR0YmwKe1xmMFxmcm9tYW4gVGltZXMgTmV3IFJvbWFu
+O30KfQpcdmlld2tpbmQ0XHVjMVxwYXJkXGYwXGZzMjQKQnUgYmlyIG9ybmVrIFJURiBwYXJh
+Z3JhZmlkaXIucGFyCn0=
+&lt;/content&gt;</code></pre>
+
+        <p>Yukarıdaki örnek base64 çözüldüğünde klasik RTF açılış grubunu verir:</p>
+
+        <pre style="background:#f5f5f5;padding:12px;border-radius:6px;font-family:monospace;overflow-x:auto;"><code>{\rtf1\ansi\deff0{\fonttbl
+{\f0\froman Times New Roman;}
+}
+\viewkind4\uc1\pard\f0\fs24
+Bu bir ornek RTF paragrafidir.\par
+}</code></pre>
+
+        <p><strong>Neden RTF?</strong> Tasarım tercihinin birkaç pratik nedeni vardır:</p>
+        <ul>
+            <li><strong>Windows uyumluluğu:</strong> Eski UYAP Döküman Editörü sürümleri Windows'un yerleşik <code>RichEdit</code> kontrolünü kullandı. RichEdit ise doğal olarak RTF akışı tüketir.</li>
+            <li><strong>Kopyala-yapıştır:</strong> Avukatlar Word'den içerik kopyaladığında Windows panosu RTF formatında veri taşır. UDF bu veriyi yeniden parse etmek yerine olduğu gibi saklamayı tercih eder.</li>
+            <li><strong>Gömülü nesneler:</strong> Özel karakterler, denklem nesneleri ve inline resimler RTF içinde daha kolay temsil edilir.</li>
+        </ul>
+
+        <p>Parser yazarken RTF bloklarını tanımak ve bunları ayrı bir RTF parser'ına yönlendirmek gerekir. Basit metin çıkarımı için <code>/\\[a-z]+\d*\s?/g</code> gibi bir kontrol kodu temizleyici yeterli olabilir; ancak <strong>tam doğruluk</strong> için RFC 1341 tabanlı gerçek bir RTF tokenizer'a ihtiyaç vardır.</p>
+
+        <h2>8. PKCS#7 Dijital İmza Katmanı</h2>
+        <p>UDF'in en karmaşık katmanı <strong>dijital imza bloğudur</strong>. UYAP, imzalı resmi belgelerde (mahkeme kararı, tensip zaptı, duruşma tutanağı) PKCS#7 / CMS (Cryptographic Message Syntax, RFC 5652) standardında bir imza dosyası ekler. Bu dosya ZIP içinde <code>signature.p7s</code> veya benzer adla bulunur.</p>
+
+        <p>PKCS#7 imza bloğu <strong>ASN.1</strong> (Abstract Syntax Notation One) DER kodlamasındadır. Kaba yapı şöyledir:</p>
+
+        <pre style="background:#f5f5f5;padding:12px;border-radius:6px;font-family:monospace;overflow-x:auto;"><code>ContentInfo ::= SEQUENCE {
+    contentType  OBJECT IDENTIFIER,  -- 1.2.840.113549.1.7.2 (signedData)
+    content      [0] EXPLICIT SignedData
+}
+
+SignedData ::= SEQUENCE {
+    version             INTEGER,
+    digestAlgorithms    SET OF AlgorithmIdentifier,    -- genellikle sha256
+    encapContentInfo    SEQUENCE {
+        eContentType    OBJECT IDENTIFIER,             -- 1.2.840.113549.1.7.1 (data)
+        eContent        [0] OCTET STRING OPTIONAL     -- imzalanan ham veri
+    },
+    certificates        [0] SET OF Certificate,        -- imzalayan sertifika zinciri
+    crls                [1] SET OF CertificateList OPTIONAL,
+    signerInfos         SET OF SignerInfo              -- asil imza
+}
+
+SignerInfo ::= SEQUENCE {
+    version             INTEGER,
+    sid                 SignerIdentifier,              -- cert seri no + issuer
+    digestAlgorithm     AlgorithmIdentifier,           -- sha256
+    signedAttrs         [0] SET OF Attribute OPTIONAL, -- imzalama zamani vs.
+    signatureAlgorithm  AlgorithmIdentifier,           -- rsaEncryption
+    signature           OCTET STRING                   -- gercek imza byte'lari
+}</code></pre>
+
+        <p>Tipik olarak şu alanlar UDF imzasında bulunur:</p>
+        <ul>
+            <li><strong>Sertifika zinciri:</strong> Hakim/kâtibin nitelikli elektronik sertifikası + ara CA + kök CA (E-Tugra, TUBITAK Kamu SM, TurkTrust gibi).</li>
+            <li><strong>İmzalama zamanı (signingTime):</strong> <code>UTCTime</code> olarak saklanır. Zaman damgası servisi (TSA) varsa ek bir <code>TimeStampToken</code> içerir.</li>
+            <li><strong>messageDigest:</strong> <code>content.xml</code> içeriğinin SHA-256 özeti. İmza doğrulamasının kilit noktasıdır.</li>
+            <li><strong>İmza algoritması:</strong> Genellikle <code>sha256WithRSAEncryption</code>, son yıllarda ECDSA varyantları da görülmeye başlandı.</li>
+        </ul>
+
+        <div class="info-box">
+            <p><strong>Doğrulama sırası:</strong> (1) ZIP'ten <code>content.xml</code> çıkar; (2) SHA-256 hesapla; (3) PKCS#7 bloğundaki <code>messageDigest</code> ile karşılaştır; (4) <code>signature</code> alanını sertifikadaki public key ile RSA/ECDSA doğrulaması yap; (5) Sertifika zincirini güvenilir köke kadar takip et; (6) İmza zamanında sertifikanın iptal listesinde olmadığını kontrol et (OCSP/CRL). Biz bu akışı <a href="udf-dijital-imza-dogrulama.html">UDF Dijital İmza Doğrulama</a> sayfasında daha ayrıntılı açıklıyoruz.</p>
+        </div>
+
+        <p>ASN.1 parser'ı olarak JavaScript tarafında <code>asn1.js</code>, <code>node-forge</code> veya Web Crypto API ile manuel DER çözme yaygın yaklaşımlardır. Python tarafında <code>cryptography</code> kütüphanesinin <code>pkcs7</code> modülü doğrudan destek verir.</p>
+
+        <div class="cta-box">
+            <h3>UDF Dosyanızı Hemen Dönüştürün</h3>
+            <p>Bu spesifikasyonu kullanan canlı dönüştürücümüzü deneyin. Dosyalarınız tarayıcınızdan asla çıkmaz.</p>
+            <a href="/" class="btn btn-primary">Canlı Dönüştürücüyü Aç</a>
+        </div>
+
+        <h2>9. UDF vs Benzer Formatlar</h2>
+        <p>UDF'i daha iyi konumlandırmak için tanıdık belge formatlarıyla karşılaştıralım. Yapısal olarak DOCX/ODT ailesine yakındır; ancak yargısal metadata ve imza entegrasyonu açısından kendine özgüdür.</p>
+
+        <table style="width:100%;border-collapse:collapse;margin:16px 0;">
+            <thead>
+                <tr style="background:#f0f4ff;">
+                    <th style="border:1px solid #d0d7e2;padding:8px;text-align:left;">Özellik</th>
+                    <th style="border:1px solid #d0d7e2;padding:8px;text-align:left;">UDF</th>
+                    <th style="border:1px solid #d0d7e2;padding:8px;text-align:left;">DOCX</th>
+                    <th style="border:1px solid #d0d7e2;padding:8px;text-align:left;">ODT</th>
+                    <th style="border:1px solid #d0d7e2;padding:8px;text-align:left;">RTF</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td style="border:1px solid #d0d7e2;padding:8px;">Uzantı</td>
+                    <td style="border:1px solid #d0d7e2;padding:8px;">.udf</td>
+                    <td style="border:1px solid #d0d7e2;padding:8px;">.docx</td>
+                    <td style="border:1px solid #d0d7e2;padding:8px;">.odt</td>
+                    <td style="border:1px solid #d0d7e2;padding:8px;">.rtf</td>
+                </tr>
+                <tr>
+                    <td style="border:1px solid #d0d7e2;padding:8px;">Konteyner</td>
+                    <td style="border:1px solid #d0d7e2;padding:8px;">ZIP</td>
+                    <td style="border:1px solid #d0d7e2;padding:8px;">ZIP (OOXML)</td>
+                    <td style="border:1px solid #d0d7e2;padding:8px;">ZIP (OpenDocument)</td>
+                    <td style="border:1px solid #d0d7e2;padding:8px;">Düz metin</td>
+                </tr>
+                <tr>
+                    <td style="border:1px solid #d0d7e2;padding:8px;">Şema tipi</td>
+                    <td style="border:1px solid #d0d7e2;padding:8px;">Kapalı XML + RTF hybrid</td>
+                    <td style="border:1px solid #d0d7e2;padding:8px;">Açık XML (ISO/IEC 29500)</td>
+                    <td style="border:1px solid #d0d7e2;padding:8px;">Açık XML (ISO/IEC 26300)</td>
+                    <td style="border:1px solid #d0d7e2;padding:8px;">Kontrol kodu tabanlı</td>
+                </tr>
+                <tr>
+                    <td style="border:1px solid #d0d7e2;padding:8px;">Açık spec</td>
+                    <td style="border:1px solid #d0d7e2;padding:8px;">Hayır</td>
+                    <td style="border:1px solid #d0d7e2;padding:8px;">Evet</td>
+                    <td style="border:1px solid #d0d7e2;padding:8px;">Evet</td>
+                    <td style="border:1px solid #d0d7e2;padding:8px;">Evet</td>
+                </tr>
+                <tr>
+                    <td style="border:1px solid #d0d7e2;padding:8px;">Dijital imza</td>
+                    <td style="border:1px solid #d0d7e2;padding:8px;">Yerleşik PKCS#7</td>
+                    <td style="border:1px solid #d0d7e2;padding:8px;">Opsiyonel (XML DSig)</td>
+                    <td style="border:1px solid #d0d7e2;padding:8px;">Opsiyonel (XML DSig)</td>
+                    <td style="border:1px solid #d0d7e2;padding:8px;">Yok</td>
+                </tr>
+                <tr>
+                    <td style="border:1px solid #d0d7e2;padding:8px;">Yaygın kullanım</td>
+                    <td style="border:1px solid #d0d7e2;padding:8px;">UYAP / Türk yargısı</td>
+                    <td style="border:1px solid #d0d7e2;padding:8px;">Küresel ofis dokümanları</td>
+                    <td style="border:1px solid #d0d7e2;padding:8px;">LibreOffice ekosistemi</td>
+                    <td style="border:1px solid #d0d7e2;padding:8px;">Eski/çapraz platform</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <p>UDF'in DOCX'e çevrilmesi teknik olarak mümkündür ve biz bu dönüşümü <code>docx</code> JavaScript kütüphanesi üzerinden <a href="udf-dosyasi-word-cevirme.html">UDF → Word</a> özelliğimizde sunuyoruz. Ancak PKCS#7 imza katmanı DOCX'te muhafaza edilemez; yalnızca imzanın varlığına dair metadata not olarak eklenebilir.</p>
+
+        <h2>10. UDF Parser'ı Nasıl Yazılır? Geliştiriciler İçin İpuçları</h2>
+        <p>Kendi UDF parser'ınızı yazmak istiyorsanız aşağıdaki yol haritası başlangıç için uygundur. JavaScript / tarayıcı tabanlı bir yaklaşımı örnek alıyoruz; Python, Java veya .NET için de paralel kütüphaneler mevcuttur.</p>
+
+        <pre style="background:#f5f5f5;padding:12px;border-radius:6px;font-family:monospace;overflow-x:auto;"><code>// 1. ZIP'i ac
+import JSZip from 'jszip';
+const zip = await JSZip.loadAsync(file);
+
+// 2. content.xml'i cek
+const xmlText = await zip.file('content.xml').async('string');
+
+// 3. DOMParser ile parse et
+const parser = new DOMParser();
+const xmlDoc = parser.parseFromString(xmlText, 'application/xml');
+
+// 4. Paragraflari gez
+const paragraphs = xmlDoc.getElementsByTagName('paragraph');
+for (const p of paragraphs) {
+  const alignment = p.getAttribute('Alignment') || '0';
+  const contents = p.getElementsByTagName('content');
+  for (const c of contents) {
+    const text = c.textContent;
+    const bold = c.getAttribute('Bold') === 'true';
+    const size = parseInt(c.getAttribute('Size')) || 12;
+    // ... jsPDF veya docx cikti uretimi
+  }
+}
+
+// 5. Imza bloklarini kontrol et (opsiyonel)
+const sigFile = zip.file(/\.p7s$/)[0];
+if (sigFile) {
+  const sigBytes = await sigFile.async('uint8array');
+  // forge.pkcs7.messageFromAsn1(...) ile dogrula
+}</code></pre>
+
+        <p>Karşılaşacağınız başlıca tuzaklar:</p>
+        <ul>
+            <li><strong>Türkçe karakter kodlaması:</strong> İ (büyük noktalı i) ve ı (küçük noktasız i) gibi karakterler UTF-8 olarak doğru kaydedilmiş olsa bile <code>toLowerCase()</code> gibi JavaScript yerleşik fonksiyonlarında indeks kayması üretebilir. String işlemlerinde <code>normalize('NFC')</code> kullanın.</li>
+            <li><strong>Offset tutarlılığı:</strong> <code>startOffset</code> ve <code>length</code> alanları belgenin "düz metin" gösterimindeki pozisyonlara atıfta bulunur. Paragraf sonunda <code>\n</code> karakterini saymayı unutmayın.</li>
+            <li><strong>Eksik elementler:</strong> Bazı UDF sürümleri <code>properties</code> bloğunu atlar veya <code>headers/footers</code>'ı boş bırakır. Null-safe erişim şarttır.</li>
+            <li><strong>RTF ada-dışı segmentleri:</strong> RTF bloklarını XML text olarak parse etmeye çalışmayın; önce tipi kontrol edin.</li>
+            <li><strong>Font kullanılabilirliği:</strong> "Times New Roman" varsayılan sayılır; ancak UDF içinde herhangi bir Windows fontu referanslanabilir. Linux/mobil render için Noto Serif gibi uyumlu fontlara fallback sağlayın.</li>
+            <li><strong>Dosya boyutu:</strong> Tipik bir UDF 5-100 KB arasındadır. 10 MB üzerindekileri reddetmek bellek DoS saldırılarına karşı iyi bir savunmadır.</li>
+        </ul>
+
+        <div class="info-box">
+            <p><strong>Açık kaynak durumu:</strong> Yazının yayınlandığı tarihte (Nisan 2026) GitHub'da UDF formatını uçtan uca parse eden, aktif bakımlı bir kütüphane bulunmuyor. <a href="/">convertudftopdf.com</a>'un arkasındaki JavaScript dönüştürücüsü tarayıcıda çalışır ve bu yazıdaki gözlemler büyük ölçüde o kod tabanının deneyimine dayanır. Deneysel eski projeler (örn. bazı Java-Swing UDF viewer denemeleri) bakımsız kalmış, PKCS#7 katmanını işlemez ve modern UYAP sürümleriyle uyumsuzdur.</p>
+        </div>
+
+        <h2>11. Sıkça Sorulan Sorular</h2>
+
+        <h3>UDF formatı için resmi bir spesifikasyon belgesi var mı?</h3>
+        <p>Adalet Bakanlığı veya UYAP tarafından herkese açık olarak yayımlanmış resmi bir UDF spesifikasyonu bulunmamaktadır. Format detayları UYAP Döküman Editörü'nün davranışından ve gerçek UDF örneklerinin incelenmesinden çıkarılmıştır. Bu yazı da o pratik bilgiye dayanmaktadır.</p>
+
+        <h3>UDF'in sürüm numarası ya da schemaVersion alanı var mı?</h3>
+        <p>Bazı UDF dosyalarının <code>&lt;properties&gt;</code> bloğunda <code>createdBy</code> alanında editör sürümü gözükür (örn. "UYAP Dokuman Editoru 5.x"). Ancak formatın kendisinde net bir <code>schemaVersion</code> attribute'u bulunmaz. Sürüm farklılıkları daha çok eksik/yeni element varlığıyla anlaşılır.</p>
+
+        <h3>UDF dosyasını manuel olarak düzenleyebilir miyim?</h3>
+        <p>Teknik olarak evet: ZIP'i açıp <code>content.xml</code>'i düzenleyip yeniden ZIP'leyebilirsiniz. Ancak eğer dosya <strong>dijital imzalıysa</strong>, imzayı geçersiz kılmış olursunuz. İmza doğrulama zincirinde <code>messageDigest</code> artık uyuşmayacağı için belge "sahte" olarak işaretlenir. Mahkeme süreçlerinde orijinal imzalı UDF'lerin değiştirilmemesi kritik önemdedir.</p>
+
+        <h3>UDF'in DOCX'ten farkı sadece markası mı?</h3>
+        <p>Hayır, yapısal farklar da var. DOCX, OOXML standardına sıkı sıkıya bağlıdır ve ISO/IEC 29500 tarafından tanımlanır. UDF ise kapalı bir yapıya sahip, XML elementleri farklı isimlendirilir (<code>&lt;paragraph&gt;</code> vs <code>&lt;w:p&gt;</code>), biçimlendirme attribute'ları miras almak yerine her segmentte tekrarlanır ve PKCS#7 imza katmanı yerleşiktir. Ayrıca UDF'in tab-stop temelli tablo yaklaşımı DOCX'in grid modelinden farklıdır.</p>
+
+        <h3>Neden RTF ve XML birlikte kullanılıyor?</h3>
+        <p>Bu hibrit yaklaşım, UYAP Döküman Editörü'nün Windows RichEdit kontrolü üzerine inşa edilmesinden kaynaklanır. XML belgenin yapısal omurgasını (sayfa düzeni, tablolar, paragraf sırası) taşırken, bazı zengin metin alanları — özellikle panodan yapıştırılan içerik — RTF olarak saklanır. Bu, editörün performansını artırır ancak parser yazanlar için ek karmaşıklık demektir.</p>
+
+        <h3>PKCS#7 yerine XAdES veya CAdES kullanılmış olsaydı farklı olur muydu?</h3>
+        <p>Teknik olarak evet. XAdES (XML Advanced Electronic Signatures) XML imza standardıdır ve uzun süreli arşivleme için ek özellikler sunar. CAdES (CMS Advanced Electronic Signatures) ise PKCS#7'nin üst kümesidir ve zaman damgası, iptal bilgisi gibi LTV (Long Term Validation) kanıtlarını standartlaştırır. UYAP bazı belgelerde CAdES-T veya CAdES-X Long profillerine yaklaşan imzalar üretir; ancak temel yapı hâlâ RFC 5652 CMS uyumludur.</p>
+
+        <h3>UDF'i başka bir formata dönüştürmek imzayı korur mu?</h3>
+        <p>Hayır. Dönüştürme işlemi (UDF → PDF veya UDF → DOCX) belgenin içeriğini yeni bir konteynere taşır; orijinal PKCS#7 imza bloğu yeni formatla kriptografik olarak eşleşmez. Dönüştürülen PDF'i yeniden imzalamak isterseniz PAdES (PDF Advanced Electronic Signatures) standardını kullanmanız gerekir. İmzalı UDF'in hukuki geçerliliğini korumak için <strong>orijinal UDF dosyasını saklamak</strong> ve dönüştürülmüş versiyonu sadece görüntüleme amacıyla kullanmak en güvenli yaklaşımdır.</p>
+
+        <h3>Mobil veya web ortamında UDF parse etmek neden zor?</h3>
+        <p>Başlıca sebepler: (1) UYAP Döküman Editörü sadece Windows için dağıtılır; (2) ZIP + XML + RTF + PKCS#7 katmanlarının hepsinin JavaScript'te implementasyonu karmaşıktır; (3) Türkçe font desteği (ş, ç, ğ, ı) için özel TTF yüklemesi gerekir; (4) PKCS#7 doğrulaması için Web Crypto API yeterli değildir, ek ASN.1 parser'lar gerekir. Biz convertudftopdf.com'da bu zorlukları JSZip + jsPDF + özel Turkish font entegrasyonu ile çözüyoruz.</p>
+
+        <h3>UDF açmak için Java Swing'li eski UYAP uygulamalarını kullanamaz mıyım?</h3>
+        <p>Kullanabilirsiniz ancak önemli sorunlar var: (1) Java sürümü uyumsuzlukları son kullanıcıda çalışmayabilir; (2) Modern UYAP 5.x sürümünün ürettiği UDF'ler eski Java editörlerde tam açılmayabilir; (3) PKCS#7 doğrulaması güncel CA sertifikası olmadan başarısız olur. Bu nedenle modern tarayıcı tabanlı dönüştürücüler daha güvenilir ve platformdan bağımsızdır.</p>
+
+        <div class="cta-box">
+            <h3>Daha Fazla Teknik İçerik</h3>
+            <p>UYAP ekosistemi, terminoloji ve hukuk teknolojisi hakkında daha derin rehberler için UYAP Rehberi'ni ve sözlüğümüzü inceleyin.</p>
+            <a href="uyap-rehber.html" class="btn btn-primary">UYAP Rehberini Aç</a>
+        </div>
+
+        <h2>İlgili Sayfalar</h2>
+        <ul>
+            <li><a href="udf-nedir.html">UDF Nedir? — Başlangıç seviyesi genel tanıtım</a></li>
+            <li><a href="udf-dijital-imza-dogrulama.html">UDF Dijital İmza Doğrulama — PKCS#7 iş akışı</a></li>
+            <li><a href="uyap-rehber.html">UYAP Rehberi — Sistem genel bakış</a></li>
+            <li><a href="uyap-sozluk.html">UYAP Sözlüğü — Yargısal terminoloji</a></li>
+            <li><a href="karsilastirma.html">UDF vs PDF vs DOCX — Format karşılaştırma</a></li>
+            <li><a href="/">Canlı UDF → PDF Dönüştürücü</a></li>
+        </ul>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <a href="/" class="logo">
+                        <svg class="logo-icon" viewBox="0 0 32 32" fill="none">
+                            <rect width="32" height="32" rx="8" fill="#2563eb"/>
+                            <path d="M8 10h6v12H8V10zm10 0h6v12h-6V10z" fill="#fff" opacity="0.3"/>
+                            <path d="M13 16l6-4v8l-6-4z" fill="#fff"/>
+                        </svg>
+                        <span>convertudftopdf<small>.com</small></span>
+                    </a>
+                    <p>UYAP .udf dosyalarını hızlı ve güvenli bir şekilde PDF'e dönüştürün.</p>
+                </div>
+                <div class="footer-links">
+                    <h4>Rehberler</h4>
+                    <a href="udf-nedir.html">UDF Nedir?</a>
+                    <a href="udf-to-pdf.html">UDF to PDF</a>
+                    <a href="udf-dosyasi-acma.html">UDF Dosyası Açma</a>
+                    <a href="udf-dosyasi-telefonda-acma.html">Telefonda UDF Açma</a>
+                    <a href="udf-dosyasi-word-cevirme.html">UDF Word'e Çevirme</a>
+                    <a href="word-udf-cevirme.html">Word UDF'e Çevirme</a>
+                    <a href="karsilastirma.html">UDF vs PDF</a>
+                    <a href="udf-sorun-giderme.html">UDF Sorun Giderme</a>
+                    <a href="udf-dijital-imza-dogrulama.html">UDF Dijital İmza Doğrulama</a>
+                    <a href="uyap-rehber.html">UYAP Rehberi</a>
+                    <a href="uyap-sozluk.html">UYAP Sözlüğü</a>
+                    <a href="uyap-pdf-donusturucu.html">UYAP PDF Dönüştürücü</a>
+                </div>
+                <div class="footer-links">
+                    <h4>Kurumsal</h4>
+                    <a href="/">Dönüştürücü</a>
+                    <a href="/#how-it-works">Nasıl Çalışır</a>
+                    <a href="/#faq">SSS</a>
+                    <a href="privacy.html">Gizlilik Politikası</a>
+                    <a href="kullanim-sartlari.html">Kullanım Şartları</a>
+                    <a href="iletisim.html">İletişim</a>
+                    <a href="hakkimizda.html">Hakkımızda</a>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2026 convertudftopdf.com — Tüm hakları saklıdır.</p>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>

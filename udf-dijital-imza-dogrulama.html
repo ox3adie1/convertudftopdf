@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UDF Dijital İmza Doğrulama - Mahkeme Belgesi E-İmza Kontrol Rehberi | convertudftopdf.com</title>
+    <meta name="description" content="UDF dosyasındaki dijital imzayı doğrulama rehberi. PKCS#7 e-imza bilgileri, imzalayan sertifikası, zaman damgası ve UYAP mahkeme belgelerinde imza kontrolü.">
+    <meta name="keywords" content="udf dijital imza, udf e-imza doğrulama, mahkeme belgesi imzası, pkcs7 udf, uyap dijital imza kontrol, udf imza bilgileri, e-imzalı udf doğrulama, elektronik imza uyap">
+    <meta name="robots" content="index, follow">
+    <meta name="theme-color" content="#2563eb">
+    <meta name="google-site-verification" content="DQXlhI8zcKV054poHs1OgD5TbN-FSfMkcjTzW4NOLMI">
+    <meta property="og:title" content="UDF Dijital İmza Doğrulama - Mahkeme Belgesi E-İmza Kontrol Rehberi">
+    <meta property="og:description" content="UDF dosyasındaki PKCS#7 dijital imzayı doğrulama rehberi. İmzalayan sertifikası, zaman damgası ve UYAP mahkeme belgelerinde e-imza kontrolü.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://convertudftopdf.com/udf-dijital-imza-dogrulama.html">
+    <meta property="og:image" content="https://convertudftopdf.com/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@plajterligi">
+    <meta name="twitter:title" content="UDF Dijital İmza Doğrulama - Mahkeme Belgesi E-İmza Kontrol Rehberi">
+    <meta name="twitter:description" content="UDF dosyasındaki PKCS#7 dijital imzayı doğrulama rehberi. İmzalayan, zaman damgası, sertifika bilgileri.">
+    <meta name="twitter:image" content="https://convertudftopdf.com/og-image.png">
+    <link rel="canonical" href="https://convertudftopdf.com/udf-dijital-imza-dogrulama.html">
+    <link rel="alternate" hreflang="tr" href="https://convertudftopdf.com/udf-dijital-imza-dogrulama.html">
+    <link rel="alternate" hreflang="x-default" href="https://convertudftopdf.com/udf-dijital-imza-dogrulama.html">
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="manifest" href="manifest.json">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <meta name="google-adsense-account" content="ca-pub-4410660717929931">
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4410660717929931" crossorigin="anonymous"></script>
+    <!-- Google Analytics 4 -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-2QDTPQTFQ8"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-2QDTPQTFQ8');
+    </script>
+    <link rel="stylesheet" href="style.css">
+
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+            {
+                "@type": "ListItem",
+                "position": 1,
+                "name": "Ana Sayfa",
+                "item": "https://convertudftopdf.com/"
+            },
+            {
+                "@type": "ListItem",
+                "position": 2,
+                "name": "UDF Dijital İmza Doğrulama",
+                "item": "https://convertudftopdf.com/udf-dijital-imza-dogrulama.html"
+            }
+        ]
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "HowTo",
+        "name": "UDF Dosyasının Dijital İmzası Nasıl Doğrulanır?",
+        "description": "UDF dosyasının içindeki PKCS#7 dijital imzasını doğrulama ve imzalayan bilgilerini görme rehberi. Mahkeme belgesinin kim tarafından, ne zaman ve hangi sertifika ile imzalandığını öğrenin.",
+        "step": [
+            {
+                "@type": "HowToStep",
+                "position": 1,
+                "name": "convertudftopdf.com adresini açın",
+                "text": "Tarayıcınızda convertudftopdf.com adresine gidin. İmza verisi tarayıcınızda analiz edilir, sunucuya gönderilmez."
+            },
+            {
+                "@type": "HowToStep",
+                "position": 2,
+                "name": "İmzalı UDF dosyasını yükleyin",
+                "text": "Mahkeme karar veya tebligat UDF dosyanızı sürükleyip bırakın ya da Dosya Seç butonunu kullanın."
+            },
+            {
+                "@type": "HowToStep",
+                "position": 3,
+                "name": "İmza metadata'sını inceleyin",
+                "text": "Dönüştürme sırasında dosya içindeki PKCS#7 imza bloğu çözümlenir. İmzalayan CN (Common Name), sertifika seri numarası, imza zamanı ve hash algoritması çıkarılır."
+            },
+            {
+                "@type": "HowToStep",
+                "position": 4,
+                "name": "PDF çıktısında bilgileri görün",
+                "text": "Oluşturulan PDF'te imza bilgileri korunur. Belgenin kim tarafından imzalandığını ve imzanın hangi sertifikaya dayandığını kalıcı olarak arşivleyebilirsiniz."
+            }
+        ],
+        "totalTime": "PT1M",
+        "tool": {
+            "@type": "HowToTool",
+            "name": "convertudftopdf.com UDF imza analizcisi"
+        },
+        "image": "https://convertudftopdf.com/og-image.png"
+    }
+    </script>
+
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "Article",
+        "headline": "UDF Dosyasının Dijital İmzasını Doğrulama Rehberi",
+        "description": "UDF dosyalarındaki PKCS#7 dijital imzaların çıkarılması ve mahkeme belgelerinde e-imza doğrulama. Avukatlar ve hukuk profesyonelleri için teknik rehber.",
+        "author": {
+            "@type": "Organization",
+            "name": "convertudftopdf.com",
+            "url": "https://convertudftopdf.com"
+        },
+        "editor": {
+            "@type": "Person",
+            "name": "Hukuk Teknolojisi Editörü"
+        },
+        "publisher": {
+            "@type": "Organization",
+            "name": "convertudftopdf.com",
+            "url": "https://convertudftopdf.com",
+            "logo": {
+                "@type": "ImageObject",
+                "url": "https://convertudftopdf.com/favicon.svg"
+            }
+        },
+        "datePublished": "2026-04-18",
+        "dateModified": "2026-04-18",
+        "mainEntityOfPage": {
+            "@type": "WebPage",
+            "@id": "https://convertudftopdf.com/udf-dijital-imza-dogrulama.html"
+        },
+        "image": "https://convertudftopdf.com/og-image.png"
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+            {
+                "@type": "Question",
+                "name": "UDF dosyasındaki dijital imzayı nasıl görebilirim?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "UDF dosyasının içindeki content.xml dosyasına gömülü PKCS#7 imza bloğunu açmak için UYAP Döküman Editörü veya convertudftopdf.com gibi imza metadata'sını çıkarabilen bir araç kullanabilirsiniz. convertudftopdf.com dosyayı tarayıcınızda analiz eder; sertifika seri numarası, imzalayan CN (Common Name), imza zamanı ve hash algoritması gibi alanları çözümler."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "PKCS#7 nedir ve UDF ile ne ilgisi var?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "PKCS#7 (Public Key Cryptography Standards #7), elektronik imza ve şifrelenmiş veri için kullanılan uluslararası standardı ifade eder. UDF dosyaları, hakim, avukat veya kalem personelinin e-imzasını bu standarda göre kendi içinde saklar. Böylece UDF açıldığında belgenin kimin tarafından imzalandığı doğrulanabilir."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "UDF imzasında hangi bilgiler yer alır?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Genellikle imzalayanın Common Name (CN) bilgisi, T.C. kimlik numarası (varsa), sertifika seri numarası, sertifika yetkilisi (Kamu SM, TÜBİTAK BİLGEM gibi), imza tarihi ve saati, hash algoritması (SHA-256 gibi) ve zaman damgası sunucusu bilgisi bulunur."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "İmzasız bir UDF dosyası geçerli mi?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "UYAP üzerinde kesinleşmiş bir karar veya tebligat genellikle e-imzalıdır. İmzasız bir UDF taslak, müsvedde ya da dışarıda oluşturulmuş bir metin olabilir. Mahkeme çıktısı olduğunu iddia eden bir belgede imza eksikse, UYAP üzerinden belge doğrulama yapılması önerilir."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "Dosyamı yüklerken imza bilgilerim başkasına gider mi?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Hayır. convertudftopdf.com tamamen istemci taraflı (client-side) çalışır. UDF dosyanız ve içindeki imza verisi tarayıcınızdan çıkmaz, hiçbir sunucuya yüklenmez. Hassas mahkeme belgeleriniz ve imza sahibinin kimlik bilgileri cihazınızda kalır."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "Zaman damgası ne işe yarar?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Zaman damgası (timestamp), imzanın belirli bir anda atıldığını güvenilir bir üçüncü taraf üzerinden kanıtlar. Avukat için önemlidir çünkü sertifika sonradan iptal edilse bile imzanın geçerli bir tarihte atıldığını gösterir ve delil zincirinde belgenin bütünlüğünü destekler."
+                }
+            }
+        ]
+    }
+    </script>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://*.googlesyndication.com https://*.google.com https://*.doubleclick.net https://*.googleadservices.com 'unsafe-inline'; style-src 'self' https://fonts.googleapis.com 'unsafe-inline'; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://*.googlesyndication.com https://*.google.com https://*.doubleclick.net; frame-src https://*.googlesyndication.com https://*.doubleclick.net https://*.google.com; frame-ancestors 'self';">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+    <meta http-equiv="Permissions-Policy" content="geolocation=(), microphone=(), camera=(), payment=()">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <a href="/" class="logo">
+                <svg class="logo-icon" viewBox="0 0 32 32" fill="none">
+                    <rect width="32" height="32" rx="8" fill="#2563eb"/>
+                    <path d="M8 10h6v12H8V10zm10 0h6v12h-6V10z" fill="#fff" opacity="0.3"/>
+                    <path d="M13 16l6-4v8l-6-4z" fill="#fff"/>
+                </svg>
+                <span>convertudftopdf<small>.com</small></span>
+            </a>
+            <nav class="nav">
+                <a href="/">Ana Sayfa</a>
+                <a href="/#converter">Dönüştür</a>
+                <a href="/#faq">SSS</a>
+            </nav>
+        </div>
+    </header>
+
+    <div class="article-content">
+        <h1>UDF Dosyasının Dijital İmzasını Doğrulama Rehberi</h1>
+        <p class="article-meta">Son güncelleme: 18 Nisan 2026 &middot; 9 dk okuma</p>
+
+        <p>Türkiye'de bir mahkeme kararı, tensip zaptı, tebligat ya da bilirkişi raporu söz konusu olduğunda, belgenin içeriği kadar <strong>o belgeyi kimin imzaladığı</strong> da hukuki değer taşır. UYAP'tan (Ulusal Yargı Ağı Platformu) indirilen <code>.udf</code> uzantılı dosyalar yalnızca metin içermez; aynı zamanda <strong>PKCS#7 standardına uygun gömülü bir dijital imza</strong> taşır. Bu imza, hakim, zabıt katibi ya da avukatın kimliğini kriptografik olarak belgeye bağlar. Bu rehberde UDF dosyalarındaki dijital imzayı nasıl okuyacağınızı, hangi bilgileri görebileceğinizi ve bir avukat ya da hakim için bu verilerin neden kritik olduğunu adım adım açıklıyoruz.</p>
+
+        <div class="info-box">
+            <p><strong>Gizlilik notu:</strong> convertudftopdf.com, UDF dosyalarının imza metadata'sını <strong>tamamen tarayıcınızda</strong> çıkarır. Ne dosyanız ne de içindeki sertifika ve imzalayan bilgileri sunucuya gönderilir. Hassas mahkeme belgesi ve T.C. kimlik numarası içerebilecek sertifika alanları cihazınızdan asla çıkmaz.</p>
+        </div>
+
+        <h2>Dijital İmza Nedir ve UDF'te Nasıl Saklanır?</h2>
+        <p>Dijital imza, asimetrik kriptografi (açık anahtar / özel anahtar çiftleri) temeline dayanan bir doğrulama mekanizmasıdır. Bir belgenin <strong>bütünlüğünü</strong> (içeriğin imza atıldıktan sonra değiştirilmediğini) ve <strong>kaynağını</strong> (imzanın belirli bir sertifika sahibine ait olduğunu) matematiksel olarak kanıtlar. Elektronik İmza Kanunu (5070 sayılı) kapsamında güvenli elektronik imza, Türk hukukunda ıslak imza ile eşdeğer hukuki sonuç doğurur.</p>
+        <p>UDF formatının yapısına bakıldığında, aslında bir <strong>ZIP arşivi</strong> olduğu görülür. Bu arşivin içinde <code>content.xml</code> adında bir XML dosyası, belgenin paragraflarını, tablolarını ve biçimlendirmesini tanımlar. Belge imzalandığında, <code>content.xml</code> içine ya da arşivin kök dizinine <strong>Base64 kodlanmış bir PKCS#7 (.p7s) bloğu</strong> gömülür. Bu blok, imza atılan içeriğin hash değerini, imzalayanın sertifikasını ve imza zamanını tek bir kriptografik paket olarak taşır.</p>
+        <p>Standart bir metin editörüyle bu bloğu okumak anlamsızdır; çünkü veri DER ya da Base64 kodlanmış ikili formattadır. İmza bilgilerini görünür hale getirmek için belgeyi anlayan özel bir ayrıştırıcı gerekir. convertudftopdf.com'un converter motoru, UDF'i açarken <code>parseUdf()</code> fonksiyonu üzerinden bu PKCS#7 bloğunu tespit ederek içindeki alanları çözümler ve size okunabilir bir form sunar.</p>
+
+        <h2>PKCS#7 Standardı ve UYAP'taki Yeri</h2>
+        <p><strong>PKCS#7</strong> (Public Key Cryptography Standards #7), RSA Laboratuvarları tarafından tanımlanmış ve RFC 2315 ile standartlaştırılmış bir elektronik imza ve şifreleme yapısıdır. Zamanla CMS (Cryptographic Message Syntax, RFC 5652) olarak gelişmiş olsa da pratikte PKCS#7 adlandırması yaygın şekilde kullanılmaktadır. Türkiye'de Kamu Sertifikasyon Merkezi (Kamu SM) ve TÜBİTAK BİLGEM tarafından üretilen nitelikli elektronik sertifikalar, PKCS#7 zarf yapısıyla belgelere bağlanır.</p>
+        <p>UYAP, hakim ve savcıların kararlarını, avukatların dilekçelerini ve kalem personelinin yazışmalarını UDF olarak üretir; bu belgeler imzalanırken <strong>"detached" veya "enveloping" PKCS#7 imza modu</strong> kullanılabilir. UYAP'ta yaygın olan model, imzalanan içerik hash'ini (genellikle SHA-256) sertifika zinciriyle birlikte saklayan, belge gövdesinden ayrı tutulmuş bir imza bloğudur. Böylece belge içeriği doğrudan okunabilirken imza doğrulaması ayrı bir adımda yapılabilir.</p>
+
+        <div class="info-box">
+            <p><strong>Teknik terim:</strong> "Hash" (özet değer), belgenin içeriğinden türetilen sabit uzunlukta bir parmak izidir. İçerikte tek bir harf değişse hash tamamen değişir. İmza bu hash üzerine atılır; bu yüzden imzalı bir UDF'te tek bir virgül bile sonradan değiştirilemez.</p>
+        </div>
+
+        <h2>Mahkeme Belgelerinde İmza Doğrulamanın Önemi</h2>
+        <p>Bir avukat ya da hakim için UDF'teki dijital imza yalnızca teknik bir ayrıntı değildir; <strong>delil değerini ve belge güvenilirliğini</strong> doğrudan belirleyen bir unsurdur. İmza doğrulamanın pratikteki önemi birkaç eksende toplanabilir.</p>
+        <ul>
+            <li><strong>Delil zinciri (chain of custody):</strong> Bir müvekkile sunulacak mahkeme çıktısının gerçekten UYAP'tan alınan orijinal belge olduğunu göstermek için imzalayan kurum ve sertifika yetkilisi bilgisi önemlidir. İmza bloğu, belgenin oluşturulduğu an ile duruşma günü arasındaki süreçte değiştirilmediğini kanıtlar.</li>
+            <li><strong>Belge bütünlüğü:</strong> İmzalı UDF'te tek bir karakter değişse hash tutmayacağı için imza geçersiz hale gelir. Bir avukat karşı tarafın sunduğu UDF çıktısını incelerken, belge üzerinde oynandığı şüphesi varsa imza doğrulama ilk kontrol noktasıdır.</li>
+            <li><strong>İmzalayanın yetkisi:</strong> Bir kararı imzalayan hakimin gerçekten o mahkemede görevli bir hakim olup olmadığı, sertifika üzerindeki CN (Common Name) ve sertifika yetkilisi bilgilerinden kontrol edilebilir.</li>
+            <li><strong>Zaman ispatı:</strong> Tebligatın veya kararın hangi tarihte ve saatte imzalandığı, tebliğ sürelerinin ve itiraz hakkının hesaplanmasında belirleyici olabilir. Zaman damgası bu konuda bağımsız bir kanıt sağlar.</li>
+            <li><strong>İç hukuk mevzuatı uyumu:</strong> 5070 sayılı Elektronik İmza Kanunu, HMK 199. madde (elektronik belgenin senet niteliği) ve UYAP yönetmelikleri, güvenli elektronik imzanın varlığını hukuki geçerlilik için aradığından, imza alanlarının okunabilir olması bizzat dava stratejisini etkiler.</li>
+        </ul>
+        <p>Kısacası, bir hakimin verdiği karar ya da icra dairesinden gelen bir tebligat bilgisayarınıza UDF olarak indirildiğinde, dosyanın içindeki PKCS#7 bloğu bu belgeyi anonim bir metin olmaktan çıkarıp <strong>kimliği doğrulanmış, zaman damgalı, değiştirilemez bir resmi belge</strong> haline getirir.</p>
+
+        <div class="cta-box">
+            <h3>Mahkeme Belgenizin İmzasını Şimdi Görün</h3>
+            <p>İmzalı UDF dosyanızı convertudftopdf.com'a bırakın. Dosyanız tarayıcınızda çözümlenir, imza metadata'sı sunucuya gönderilmeden PDF'e aktarılır.</p>
+            <a href="/" class="btn btn-primary">İmzalı UDF Dosyasını Aç</a>
+        </div>
+
+        <h2>UDF Dosyasının İmza Bilgilerini Nasıl Görürsünüz?</h2>
+        <p>UDF'teki dijital imzayı görmek için birkaç yol vardır. En hızlı ve platform bağımsız yöntem, convertudftopdf.com üzerinden çözümlemektir. İzleyeceğiniz adımlar:</p>
+        <ol>
+            <li><a href="/">convertudftopdf.com</a> adresine gidin. Kayıt, e-posta doğrulama ya da program kurulumu gerekmez.</li>
+            <li>İmzalı UDF dosyanızı (örneğin UYAP'tan indirdiğiniz karar UDF'i) sürükleyip bırakın veya "Dosya Seç" ile seçin.</li>
+            <li>Converter motoru dosyayı açar, <code>content.xml</code> ve varsa ek imza bloklarını tespit eder.</li>
+            <li>PKCS#7 bloğu tespit edildiğinde, sertifika zinciri çözümlenir: imzalayan CN, sertifika seri numarası, imza zamanı ve hash algoritması gibi alanlar okunabilir hale gelir.</li>
+            <li>İndirilen PDF çıktısında imza metadata'sı korunur; belgenin kaynağını arşivleyebilir, müvekkilinizle güvenli biçimde paylaşabilirsiniz.</li>
+        </ol>
+        <p>Alternatif olarak, UYAP Avukat Portal'a e-imzanızla giriş yapıp belgeyi yerleşik görüntüleyici üzerinden açtığınızda da imza durumu size gösterilir. Ancak bu yöntem UYAP portalına erişim gerektirir ve bazı senaryolarda (örneğin müvekkilin elinde yalnızca UDF kopyası varsa) uygulanamaz. İşte tam bu noktada tarayıcı tabanlı bir çözümleyici, taraflar arası doğrulamada bağımsız bir inceleme imkânı sunar.</p>
+
+        <div class="info-box">
+            <p><strong>Gizlilik vurgusu:</strong> convertudftopdf.com'un PKCS#7 çözümleyicisi istemci tarafında çalışır. Ne imzalayanın adı, ne T.C. kimlik numarası, ne de sertifika seri numarası sunucuya iletilir. Tüm işlem cihazınızın JavaScript motorunda yapılır.</p>
+        </div>
+
+        <h2>İmza Sahibi Bilgileri: Ne Görebilirsiniz?</h2>
+        <p>PKCS#7 bloğu çözüldüğünde karşınıza çıkan başlıca alanlar şunlardır. Aşağıdaki tablo, mahkeme belgelerinde sıkça karşılaşılan sertifika alanlarını açıklar ve tipik bir örnek gösterir.</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Alan</th>
+                    <th>Açıklama</th>
+                    <th>Örnek</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Common Name (CN)</strong></td>
+                    <td>İmzalayan kişinin adı-soyadı. Hakim, savcı, avukat ya da kalem personeli olabilir.</td>
+                    <td>AHMET YILMAZ</td>
+                </tr>
+                <tr>
+                    <td><strong>Serial Number</strong></td>
+                    <td>Sertifikanın o yetkili tarafından verdiği benzersiz seri numarası. Sertifika iptal listesi (CRL) kontrolünde kullanılır.</td>
+                    <td>17:3F:2A:9C:...</td>
+                </tr>
+                <tr>
+                    <td><strong>Issuer (Sertifika Yetkilisi)</strong></td>
+                    <td>Sertifikayı imzalayan kök ya da ara otorite. Türkiye'de genellikle Kamu SM veya TÜBİTAK BİLGEM.</td>
+                    <td>Kamu SM NES - SSL</td>
+                </tr>
+                <tr>
+                    <td><strong>Signing Time</strong></td>
+                    <td>İmzanın atıldığı tarih-saat bilgisi. Belgeye göre UTC veya Türkiye saatinde olabilir.</td>
+                    <td>2026-04-12 14:22:07 UTC</td>
+                </tr>
+                <tr>
+                    <td><strong>Hash Algorithm</strong></td>
+                    <td>Belge özetinin üretildiği kriptografik algoritma. Günümüz UYAP belgelerinde SHA-256 yaygın.</td>
+                    <td>SHA-256</td>
+                </tr>
+                <tr>
+                    <td><strong>T.C. Kimlik No</strong></td>
+                    <td>Nitelikli elektronik sertifikalarda Subject Alt Name içinde tutulabilir; bazı sertifikalarda gizlenmiştir.</td>
+                    <td>1234*******</td>
+                </tr>
+                <tr>
+                    <td><strong>Valid From / To</strong></td>
+                    <td>Sertifikanın geçerlilik başlangıç ve bitiş tarihleri. İmza bu aralıkta atılmış olmalıdır.</td>
+                    <td>2025-01-01 – 2028-01-01</td>
+                </tr>
+                <tr>
+                    <td><strong>Timestamp Authority (TSA)</strong></td>
+                    <td>Varsa zaman damgası sunucusu URL'i ya da CN'si. Bağımsız zaman kanıtı sağlar.</td>
+                    <td>tsa.kamusm.gov.tr</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <p>Bu alanların ne kadarının görünür olacağı, belgeyi imzalayan sistemin konfigürasyonuna ve sertifika politikasına göre değişir. Örneğin bazı UYAP sertifikaları T.C. kimlik numarasını açık paylaşırken, bazıları yalnızca CN ve seri numarası döner. <strong>convertudftopdf.com bu bilgileri tarayıcınızda çıkarır</strong> ve herhangi bir sunucuya aktarmadan size sunar; böylece hassas sertifika verileri üçüncü bir taraf tarafından görülmez.</p>
+
+        <h2>E-İmza Geçerlilik Süresi ve Zaman Damgası</h2>
+        <p>Nitelikli elektronik sertifikalar genellikle 1 ila 3 yıllık geçerlilik süresiyle düzenlenir. Bir avukat veya hakim, sertifikası sona erdiğinde yeni bir sertifika alır. Peki eski sertifikayla imzalanmış bir UDF bugün açılırsa ne olur?</p>
+        <p>İşte burada <strong>zaman damgası</strong> (timestamp) devreye girer. Zaman damgası, bağımsız bir otorite (TSA - Timestamp Authority) tarafından imza anına kriptografik kanıt ekler. Böylece sertifika sonradan iptal edilse ya da süresi dolsa bile, imzanın <strong>geçerli bir tarihte ve geçerli bir sertifikayla atıldığı</strong> ispatlanabilir.</p>
+        <p>Avukatlar için pratik anlamı şudur: bir karşı taraf "bu imza artık geçersiz" iddiasında bulunsa bile, zaman damgası o tarihte imzanın hukuken geçerli olduğunu gösterir. 5070 sayılı Kanun'un ruhu, zaman damgası ile pekiştirilmiş bir imzanın ıslak imzalı bir belgedeki noter onaylı tarih gibi davranmasıdır. UDF'teki PKCS#7 bloğu zaman damgası içeriyorsa, convertudftopdf.com bu alanı da çıkarır ve size görünür hale getirir.</p>
+
+        <div class="info-box">
+            <p><strong>Pratik ipucu:</strong> Eski tarihli bir mahkeme kararını inceliyorsanız, önce zaman damgasının varlığını kontrol edin. Zaman damgası yoksa ve sertifika süresi dolmuşsa, belge üzerindeki imza hukuki değerlendirmede daha detaylı incelenmelidir.</p>
+        </div>
+
+        <h2>Yaygın Durumlar: Tensip Zaptı, Karar, Tebligat ve Bilirkişi Raporu İmzaları</h2>
+        <p>UYAP'ta farklı belge tipleri farklı imza desenleri taşır. Avukat pratiğinde sıkça karşılaşılan senaryolar:</p>
+        <ul>
+            <li><strong>Tensip zaptı:</strong> Davanın açılışında hakim tarafından imzalanır. Tensipteki imza zamanı, dava yürüyüş takvimi için referans noktasıdır. UDF'teki imza zamanını PDF'e aktarırsanız, dosya özetine doğrudan kaydedebilirsiniz.</li>
+            <li><strong>Karar (gerekçeli karar):</strong> Hakim imzasının yanı sıra bazı durumlarda zabıt katibinin imzası da bulunur. UDF, genellikle <strong>birden fazla PKCS#7 bloğu</strong> içerebilir; convertudftopdf.com bu çoklu imzaları sırayla çözümler.</li>
+            <li><strong>Tebligat:</strong> Elektronik tebligatta e-tebligat sisteminin imzası belgeye eklenir. Tebliğ tarihi, itiraz sürelerinin başlangıcı için kritik olduğundan imza üzerindeki zaman bilgisi büyük önem taşır.</li>
+            <li><strong>Bilirkişi raporu:</strong> Bilirkişi kendi nitelikli elektronik sertifikasıyla imzalar. Rapor güncellenirse yeni bir UDF üretilir ve yeni bir imza atılır. İmzalayan CN alanı bilirkişinin kimliğini doğrular; uzmanlık alanı sertifikada yer almaz, ancak mahkeme kaydında denetlenebilir.</li>
+            <li><strong>Dilekçe:</strong> Avukatın UYAP üzerinden sunduğu dilekçeler avukatın nitelikli sertifikasıyla imzalanır. Müvekkile PDF halinde ileten avukat, imza metadata'sını PDF'e taşıyarak dosyanın kaynak bütünlüğünü gösterebilir.</li>
+            <li><strong>İcra emri ve haciz tutanakları:</strong> İcra dairesinin memur imzası ve bazı durumlarda müdür onay imzası içerir. Çift imza senaryoları PKCS#7'de iç içe imza zincirleri olarak saklanır.</li>
+        </ul>
+
+        <h2>Sorunlar: İmzasız UDF, Bozuk İmza ve Geçersiz Sertifika</h2>
+        <p>İmza doğrulama her zaman pürüzsüz ilerlemeyebilir. Pratikte karşılaşılan üç ana hata senaryosu:</p>
+
+        <h3>1. İmzasız UDF</h3>
+        <p>Bir UDF dosyasında PKCS#7 bloğu yoksa, belge muhtemelen UYAP Döküman Editörü'nde oluşturulmuş ancak henüz imzalanmamıştır. Taslak dilekçeler, kontrol için gönderilen müsveddeler veya yerel olarak düzenlenmiş belgeler bu kategoriye girer. Bu durumda belgenin herhangi bir resmi senet niteliği yoktur; yalnızca metin içeriği anlam ifade eder. convertudftopdf.com, imza alanının boş olduğunu size net olarak gösterir.</p>
+
+        <h3>2. Bozuk İmza (Hash Uyuşmazlığı)</h3>
+        <p>İmza bloğu var ancak hash doğrulaması başarısızsa, belge imzalandıktan sonra <strong>herhangi bir byte düzeyinde değişikliğe uğramış</strong> demektir. Bu, belgenin elle düzenlendiğine, ZIP yapısının bozulduğuna veya aktarım sırasında veri kaybı yaşandığına işaret eder. Avukatlar için bozuk imza, belgenin delil olarak değerinin sorgulanmasını gerektiren ciddi bir bulgudur. Özgün dosyayı yeniden UYAP'tan indirmek çözüm olacaktır.</p>
+
+        <h3>3. Geçersiz ya da İptal Edilmiş Sertifika</h3>
+        <p>Sertifikanın süresi dolmuş ya da erken iptal edilmiş olabilir. Eğer belgede <strong>zaman damgası varsa</strong>, imza o tarihte geçerli bir sertifikayla atılmış sayılır ve hukuki geçerliliğini korur. Zaman damgası yoksa, CRL (Certificate Revocation List) ya da OCSP kontrolü ile sertifikanın imza anındaki durumunun ayrıca araştırılması gerekebilir. convertudftopdf.com sertifika alanlarını size gösterir; detaylı CRL/OCSP sorgulaması için Kamu SM veya ilgili sertifika otoritesinin web arayüzü kullanılabilir.</p>
+
+        <h3>4. Dosyanın Açılmaması</h3>
+        <p>Bazı durumlarda UDF dosyası bozuk ZIP imzası verdiği için hiç açılmaz. Bu tür problemler ve çözümleri için <a href="/udf-dosyasi-acma.html">UDF dosyası açma rehberimizi</a> inceleyebilirsiniz. Dosya açılıyor ancak imza çıkmıyorsa, muhtemelen imzalanmamış bir taslakla karşı karşıyasınızdır.</p>
+
+        <div class="cta-box">
+            <h3>İmza Doğrulamayı Gizlilikle Birleştirin</h3>
+            <p>Mahkeme belgelerinin imza bilgilerini bulut sunucusuna göndermeden çıkarın. convertudftopdf.com tarayıcınızda çalışır; avukat-müvekkil gizliliği güvencede kalır.</p>
+            <a href="/" class="btn btn-primary">Tarayıcıda Analiz Et</a>
+        </div>
+
+        <h2>İlgili Rehberler ve Kaynaklar</h2>
+        <p>UDF formatı ve UYAP ekosistemi hakkında daha geniş bilgi için aşağıdaki kaynaklara göz atabilirsiniz:</p>
+        <ul>
+            <li><a href="/udf-nedir.html">UDF Nedir?</a> — Formatın genel tanımı ve yapısal özellikleri.</li>
+            <li><a href="/udf-to-pdf.html">UDF to PDF</a> — İmzalı ve imzasız UDF dosyalarını PDF'e dönüştürme.</li>
+            <li><a href="/udf-dosyasi-acma.html">UDF Dosyası Açma Rehberi</a> — Açılmayan UDF dosyaları için sorun giderme.</li>
+            <li><a href="/uyap-rehber.html">UYAP Rehberi</a> — Ulusal Yargı Ağı Platformu'nun avukat ve vatandaş kullanımı.</li>
+            <li><a href="/uyap-sozluk.html">UYAP Sözlüğü</a> — Platformda karşılaşılan teknik ve hukuki terimler.</li>
+            <li><a href="/udf-format-spec.html">UDF Format Spesifikasyonu</a> (yakında) — XML şeması, imza blokları ve teknik detaylar.</li>
+            <li><a href="/avukatlar-icin-udf.html">Avukatlar için UDF</a> (yakında) — Hukuk bürolarında UDF iş akışları ve otomasyon.</li>
+        </ul>
+
+        <h2>Sıkça Sorulan Sorular</h2>
+
+        <h3>UDF'teki imzayı herhangi bir program doğrulayabilir mi?</h3>
+        <p>Hayır, standart PDF okuyucuları veya metin editörleri UDF'teki PKCS#7 bloğunu anlamaz. UYAP Döküman Editörü ya da UDF'i bilen özel bir çözümleyici gerekir. convertudftopdf.com, bu çözümlemeyi tarayıcınızda JavaScript ile yapar; ek bir kurulum gerekmez.</p>
+
+        <h3>İmzayı PDF'e çevirdiğimde metadata kaybolur mu?</h3>
+        <p>convertudftopdf.com dönüşüm sırasında imza metadata'sını PDF özelliklerine aktarır. Orijinal PKCS#7 kriptografik doğrulaması PDF formatında birebir korunmaz, ancak <strong>imzalayan, zaman ve sertifika bilgileri PDF içinde okunabilir şekilde tutulur</strong>. Delil niteliğinde kriptografik doğrulama için her zaman orijinal UDF dosyasını saklamanız önerilir.</p>
+
+        <h3>Müvekkilime sadece imza bilgilerini gönderebilir miyim?</h3>
+        <p>Evet. convertudftopdf.com'un imza çıkarıcısını çalıştırdıktan sonra, yalnızca imza metadata'sını içeren bir metin ya da küçük bir PDF not çıkararak paylaşabilirsiniz. Bu, belgenin tamamını paylaşmak istemediğiniz durumlarda (örneğin gizli içerikli bir rapor) faydalıdır.</p>
+
+        <h3>Mobil cihazdan imzayı görebilir miyim?</h3>
+        <p>Evet. Sitemiz mobil uyumludur. Telefonunuzdaki UDF dosyasını sürükleyip veya dosya yöneticisinden seçerek PKCS#7 alanlarını tarayıcınızda görebilirsiniz. Dosyanız cihazınızdan çıkmaz.</p>
+
+        <h3>E-imzalı UDF'i nasıl arşivlerim?</h3>
+        <p>Hukuki delil değerini korumak için orijinal <code>.udf</code> dosyasını değiştirmeden saklayın. Yanına convertudftopdf.com'un ürettiği PDF kopyayı ve imza özet bilgilerini ekleyin. Böylece yıllar sonra dosyayı açmanız gerektiğinde hem okunabilir bir PDF hem de kriptografik olarak doğrulanabilir orijinal UDF elinizde olur.</p>
+
+        <h3>İmza metadata'sı kişisel veri kapsamına girer mi?</h3>
+        <p>Evet. Sertifika üzerindeki ad-soyad, kurum ve bazen T.C. kimlik numarası kişisel veridir; KVKK kapsamında değerlendirilir. Bu yüzden convertudftopdf.com tüm işleme yükümlülüğünü istemci tarafında tutar: imza verisi hiçbir sunucuya gönderilmez, loglanmaz ve saklanmaz. Dosyanız yalnızca sizin cihazınızdaki tarayıcıda çözümlenir.</p>
+
+        <h3>UYAP dışında oluşturulmuş imzalı bir UDF olur mu?</h3>
+        <p>Teorik olarak evet; PKCS#7 uluslararası bir standart olduğundan herhangi bir uygulama UDF benzeri bir yapıda imza ekleyebilir. Ancak Türk hukuk pratiğinde karşılaşılan imzalı UDF'ler neredeyse tamamen UYAP ekosisteminden gelir. Bu nedenle imzalayan sertifikasının Kamu SM ya da BİLGEM zincirine bağlı olması beklenen normdur.</p>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <a href="/" class="logo">
+                        <svg class="logo-icon" viewBox="0 0 32 32" fill="none">
+                            <rect width="32" height="32" rx="8" fill="#2563eb"/>
+                            <path d="M8 10h6v12H8V10zm10 0h6v12h-6V10z" fill="#fff" opacity="0.3"/>
+                            <path d="M13 16l6-4v8l-6-4z" fill="#fff"/>
+                        </svg>
+                        <span>convertudftopdf<small>.com</small></span>
+                    </a>
+                    <p>UYAP .udf dosyalarını hızlı ve güvenli bir şekilde PDF'e dönüştürün.</p>
+                </div>
+                <div class="footer-links">
+                    <h4>Rehberler</h4>
+                    <a href="udf-nedir.html">UDF Nedir?</a>
+                    <a href="udf-to-pdf.html">UDF to PDF</a>
+                    <a href="udf-dosyasi-acma.html">UDF Dosyası Açma</a>
+                    <a href="udf-dosyasi-telefonda-acma.html">Telefonda UDF Açma</a>
+                    <a href="udf-dosyasi-word-cevirme.html">UDF Word'e Çevirme</a>
+                    <a href="word-udf-cevirme.html">Word UDF'e Çevirme</a>
+                    <a href="karsilastirma.html">UDF vs PDF</a>
+                    <a href="udf-sorun-giderme.html">UDF Sorun Giderme</a>
+                    <a href="udf-dijital-imza-dogrulama.html">UDF Dijital İmza Doğrulama</a>
+                    <a href="uyap-rehber.html">UYAP Rehberi</a>
+                    <a href="uyap-sozluk.html">UYAP Sözlüğü</a>
+                    <a href="uyap-pdf-donusturucu.html">UYAP PDF Dönüştürücü</a>
+                </div>
+                <div class="footer-links">
+                    <h4>Kurumsal</h4>
+                    <a href="/">Dönüştürücü</a>
+                    <a href="/#how-it-works">Nasıl Çalışır</a>
+                    <a href="/#faq">SSS</a>
+                    <a href="privacy.html">Gizlilik Politikası</a>
+                    <a href="kullanim-sartlari.html">Kullanım Şartları</a>
+                    <a href="iletisim.html">İletişim</a>
+                    <a href="hakkimizda.html">Hakkımızda</a>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2026 convertudftopdf.com — Tüm hakları saklıdır.</p>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>

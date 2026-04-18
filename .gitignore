@@ -5,3 +5,6 @@ backlink_rapor.md
 backlink-plani.md
 indexnow-submit.py
 .claude/
+node_modules/
+*.log
+hs_err_pid*.log
