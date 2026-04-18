@@ -123,6 +123,24 @@ body {
     color: var(--blue-600);
 }
 
+.hero-badge {
+    display: inline-block;
+    margin-top: 16px;
+    padding: 8px 20px;
+    background: var(--blue-50);
+    border: 1px solid var(--blue-200);
+    border-radius: 100px;
+    font-size: 0.95rem;
+    color: var(--gray-700);
+}
+
+.hero-badge .highlight {
+    font-weight: 700;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
 .hero-subtitle {
     margin-top: 20px;
     font-size: 1.15rem;

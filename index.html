@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>UDF to PDF Converter - Ücretsiz Online Dönüştürücü [2026] | convertudftopdf.com</title>
     <meta name="description" content="UYAP .udf, taranmış .tiff ve .zip dosyalarını anında PDF'e dönüştürün. ZIP içindeki dosyalar otomatik çıkarılır. Ücretsiz, hızlı ve güvenli — tamamen tarayıcınızda işlenir.">
-    <meta name="keywords" content="udf to pdf, udf pdf dönüştürücü, uyap pdf, uyap döküman editörü, udf dosya açma, convert udf to pdf, tiff to pdf, tiff pdf dönüştürücü, taranmış belge pdf, zip dosya çıkarma, zip pdf dönüştürme">
+    <meta name="keywords" content="udf to pdf, udf pdf dönüştürücü, uyap pdf, uyap döküman editörü, udf dosya açma, convert udf to pdf, tiff to pdf, tiff pdf dönüştürücü, taranmış belge pdf, zip dosya çıkarma, zip pdf dönüştürme, word to udf, docx udf dönüştürücü, word uyap, dilekçe udf çevirme">
     <meta property="og:title" content="UDF to PDF Converter - UYAP Dosyalarını PDF'e Dönüştür">
     <meta property="og:description" content="UYAP .udf dosyalarını anında .pdf formatına dönüştürün. Ücretsiz, hızlı ve güvenli.">
     <meta property="og:type" content="website">
@@ -72,10 +72,11 @@
             "Dosyalar sunucuya yüklenmez",
             "Toplu dönüştürme desteği",
             "Ücretsiz ve kayıt gerektirmez",
-            "UDF, TIFF ve ZIP dosya desteği",
+            "UDF, TIFF, Word ve ZIP dosya desteği",
             "Çok sayfalı TIFF dönüştürme",
             "ZIP otomatik çıkarma ve toplu dönüştürme",
             "Word (.docx) export desteği",
+            "Word (.docx) → UDF dönüştürme",
             "Belge önizleme ve metin kopyalama",
             "Offline çalışma (PWA)",
             "OCR metin tanıma (Türkçe)"
@@ -178,6 +179,14 @@
                     "@type": "Answer",
                     "text": "Evet, .zip dosyası yüklediğinizde içindeki tüm dosyalar otomatik olarak çıkarılır. UDF ve TIFF dosyaları PDF'e dönüştürülür, diğer dosyalar (Word, resim vb.) olduğu gibi korunur. Tüm dosyalar tek bir ZIP olarak indirilir."
                 }
+            },
+            {
+                "@type": "Question",
+                "name": "Word dosyamı UDF'e dönüştürebilir miyim?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Evet, .docx ve diğer Word formatlarını (.doc, .docm, .dotx, .dotm) UYAP uyumlu .udf dosyasına dönüştürebilirsiniz. Word dosyanızı yükleyin, format otomatik olarak UDF seçilir. Metin biçimlendirmesi, tablolar ve başlık/altbilgiler korunur."
+                }
             }
         ]
     }
@@ -243,6 +252,7 @@
         <div class="container">
             <h1>UYAP <span class="highlight">.udf</span> ve <span class="highlight">.tiff</span> Dosyalarını<br><span class="highlight">.pdf</span>'e Dönüştürün</h1>
             <p class="hero-subtitle">UYAP döküman ve taranmış belge dosyalarınızı saniyeler içinde PDF formatına çevirin.<br>Tamamen ücretsiz, güvenli ve tarayıcınızda çalışır.</p>
+            <p class="hero-badge"><span class="highlight">Yeni</span> Word dilekçelerinizi UYAP uyumlu .udf formatına dönüştürün</p>
         </div>
     </section>
 
@@ -268,10 +278,10 @@
                             <path d="M24 8h16v8H24V8z" stroke="currentColor" stroke-width="2.5" rx="2" fill="none"/>
                             <path d="M32 28v16M26 34l6-6 6 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
                         </svg>
-                        <h3>.udf, .tiff, fotoğraf veya .zip dosyanızı sürükleyin veya seçin</h3>
+                        <h3>.udf, Word, .tiff, fotoğraf veya .zip dosyanızı sürükleyin veya seçin</h3>
                         <p id="dropZoneDesc">Birden fazla dosya seçebilirsiniz — ZIP içindekiler otomatik çıkarılır</p>
                         <button id="selectBtn" class="btn btn-primary" aria-label="Dosya seçmek için tıklayın">Dosya Seç</button>
-                        <input type="file" id="fileInput" accept=".udf,.tiff,.tif,.zip,.jpg,.jpeg,.png,.bmp,.gif,.webp" multiple hidden>
+                        <input type="file" id="fileInput" accept=".udf,.docx,.doc,.docm,.dotx,.dotm,.tiff,.tif,.zip,.jpg,.jpeg,.png,.bmp,.gif,.webp" multiple hidden>
                     </div>
                 </div>
 
@@ -401,6 +411,15 @@
                     <h3>Her Cihazda Çalışır</h3>
                     <p>Bilgisayar, tablet veya telefon — modern bir tarayıcı yeterli.</p>
                 </div>
+                <div class="feature">
+                    <div class="feature-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M7 16V4m0 0L3 8m4-4l4 4M17 8v12m0 0l4-4m-4 4l-4-4"/>
+                        </svg>
+                    </div>
+                    <h3>Word → UDF Dönüşüm</h3>
+                    <p>Word dilekçelerinizi UYAP uyumlu .udf formatına çevirin.</p>
+                </div>
             </div>
         </div>
     </section>
@@ -464,6 +483,10 @@
                 <details class="faq-item">
                     <summary>ZIP dosyası yükleyebilir miyim?</summary>
                     <p>Evet, .zip dosyası yüklediğinizde içindeki tüm dosyalar otomatik olarak çıkarılır. UDF ve TIFF dosyaları PDF'e dönüştürülür, diğer dosyalar (Word, resim vb.) olduğu gibi korunur. Tüm dosyalar tek bir ZIP olarak indirilir.</p>
+                </details>
+                <details class="faq-item">
+                    <summary>Word dosyamı UDF'e dönüştürebilir miyim?</summary>
+                    <p>Evet, .docx ve diğer Word formatlarını (.doc, .docm, .dotx, .dotm) UYAP uyumlu .udf dosyasına dönüştürebilirsiniz. Word dosyanızı yükleyin, format otomatik olarak UDF seçilir. Metin biçimlendirmesi, tablolar ve başlık/altbilgiler korunur.</p>
                 </details>
             </div>
         </div>
@@ -563,6 +586,10 @@
                 <a href="uyap-rehber.html" class="resource-card">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>
                     <span>UYAP Rehberi</span>
+                </a>
+                <a href="udf-dosyasi-word-cevirme.html" class="resource-card">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M7 16V4m0 0L3 8m4-4l4 4M17 8v12m0 0l4-4m-4 4l-4-4" transform="translate(5,12) scale(0.5)"/></svg>
+                    <span>Word'den UDF'e Dönüştürme</span>
                 </a>
             </div>
         </div>
