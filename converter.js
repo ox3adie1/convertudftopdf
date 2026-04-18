@@ -71,7 +71,7 @@
     const OLD_WORD_EXTENSION = '.doc';
     const CONVERTIBLE_EXTENSIONS = ['.udf', '.tiff', '.tif', ...WORD_EXTENSIONS];
     const IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.bmp', '.gif', '.webp'];
-    function getFileExtension(name) { return name.toLowerCase().substring(name.lastIndexOf('.')); }
+    function getFileExtension(name) { const lower = name.toLowerCase(); return lower.substring(lower.lastIndexOf('.')); }
     function isImageFile(name) { return IMAGE_EXTENSIONS.includes(getFileExtension(name)); }
     function isConvertibleFile(name) { return CONVERTIBLE_EXTENSIONS.includes(getFileExtension(name)) || isImageFile(name); }
     function isZipFile(name) { return getFileExtension(name) === '.zip'; }
