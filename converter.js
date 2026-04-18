@@ -40,6 +40,8 @@
     const downloadSelectedBtn = document.getElementById('downloadSelectedBtn');
     const selectAllCheckbox = document.getElementById('selectAllCheckbox');
     const selectedCountEl = document.getElementById('selectedCount');
+    const mergeBtn = document.getElementById('mergeBtn');
+    const mergeBtnOriginalHTML = mergeBtn ? mergeBtn.innerHTML : '';
 
     // ── Toast Notification System ──
     function showToast(message, type = 'error', duration = 5000) {
@@ -66,13 +68,15 @@
 
     // ── File Type Helpers ──
     const CONVERTIBLE_EXTENSIONS = ['.udf', '.tiff', '.tif'];
+    const IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.bmp', '.gif', '.webp'];
     function getFileExtension(name) { return name.toLowerCase().substring(name.lastIndexOf('.')); }
-    function isConvertibleFile(name) { return CONVERTIBLE_EXTENSIONS.includes(getFileExtension(name)); }
+    function isImageFile(name) { return IMAGE_EXTENSIONS.includes(getFileExtension(name)); }
+    function isConvertibleFile(name) { return CONVERTIBLE_EXTENSIONS.includes(getFileExtension(name)) || isImageFile(name); }
     function isZipFile(name) { return getFileExtension(name) === '.zip'; }
     function isAcceptedFile(name) { return isConvertibleFile(name) || isZipFile(name); }
     function isTiffFile(name) { const ext = getFileExtension(name); return ext === '.tiff' || ext === '.tif'; }
     function isUdfFile(name) { return getFileExtension(name) === '.udf'; }
-    function toPdfFilename(name) { return name.replace(/\.(udf|tiff|tif)$/i, '.pdf'); }
+    function toPdfFilename(name) { return name.replace(/\.(udf|tiff|tif|jpe?g|png|bmp|gif|webp)$/i, '.pdf'); }
     function toDocxFilename(name) { return name.replace(/\.(udf)$/i, '.docx'); }
     function toOutputFilename(name) {
         if (outputFormat === 'docx' && isUdfFile(name)) return toDocxFilename(name);
@@ -217,11 +221,44 @@
         });
     }
 
+    if (mergeBtn) {
+        mergeBtn.addEventListener('click', async () => {
+            const pdfEntries = files.filter(f => f.status === 'done' && f.result && f.selected !== false);
+            if (pdfEntries.length < 2) return;
+            mergeBtn.disabled = true;
+            mergeBtn.textContent = 'Birleştiriliyor...';
+            try {
+                await mergePdfsAndDownload(pdfEntries);
+            } catch (err) {
+                console.error('Merge error:', err);
+                showToast('PDF birleştirme hatası: ' + (err.message || 'Bilinmeyen hata'), 'error');
+            } finally {
+                mergeBtn.disabled = false;
+                mergeBtn.innerHTML = mergeBtnOriginalHTML;
+                updateDownloadBar();
+            }
+        });
+    }
+
     if (formatSelect) {
         formatSelect.addEventListener('change', (e) => {
             outputFormat = e.target.value;
+            updateDownloadBar();
             trackEvent('format_select', { format: outputFormat });
         });
+    }
+
+    function updateFormatOptions() {
+        if (!formatSelect) return;
+        const hasUdf = files.some(f => isUdfFile(f.file.name) && f.status === 'waiting');
+        const docxOption = formatSelect.querySelector('option[value="docx"]');
+        if (docxOption) {
+            docxOption.disabled = !hasUdf;
+        }
+        if (!hasUdf && outputFormat === 'docx') {
+            formatSelect.value = 'pdf';
+            outputFormat = 'pdf';
+        }
     }
 
     if (previewClose) {
@@ -250,7 +287,7 @@
                 continue;
             }
             if (!isConvertibleFile(f.name)) {
-                showToast(`"${f.name}" desteklenmeyen dosya formatı. Yalnızca .udf, .tiff ve .zip dosyaları kabul edilir.`, 'warning');
+                showToast(`"${f.name}" desteklenmeyen dosya formatı. Yalnızca .udf, .tiff, .zip ve fotoğraf dosyaları kabul edilir.`, 'warning');
                 continue;
             }
 
@@ -364,7 +401,8 @@
 
             const iconLabel = entry.status === 'passthrough'
                 ? getFileExtension(entry.file.name).replace('.', '').toUpperCase()
-                : (isTiffFile(entry.file.name) ? 'TIFF' : 'UDF');
+                : isImageFile(entry.file.name) ? 'IMG'
+                : isTiffFile(entry.file.name) ? 'TIFF' : 'UDF';
             const fromZipLabel = entry.fromZip ? `<span class="file-item-zip">${escapeHtml(entry.fromZip)}.zip</span>` : '';
 
             const sigInfo = entry.signatureInfo
@@ -443,6 +481,7 @@
         });
 
         updateDownloadBar();
+        updateFormatOptions();
     }
 
     function updateDownloadBar() {
@@ -466,6 +505,14 @@
         if (selectAllCheckbox) {
             selectAllCheckbox.checked = count === total;
             selectAllCheckbox.indeterminate = count > 0 && count < total;
+        }
+        if (mergeBtn) {
+            const selectedPdfs = selectedFiles.filter(f => f.status === 'done');
+            const hide = outputFormat === 'docx';
+            mergeBtn.hidden = hide;
+            if (!hide) {
+                mergeBtn.disabled = selectedPdfs.length < 2;
+            }
         }
     }
 
@@ -521,13 +568,16 @@
             progressBar.style.width = `${pct}%`;
             progressText.textContent = `Dosya ${processed}/${total} dönüştürülüyor...`;
             if (progressDetail) {
-                const fileType = isTiffFile(files[i].file.name) ? 'TIFF' : 'UDF';
+                const fileType = isImageFile(files[i].file.name) ? 'Fotoğraf' : isTiffFile(files[i].file.name) ? 'TIFF' : 'UDF';
                 progressDetail.textContent = `${files[i].file.name} — ${fileType} ayrıştırılıyor...`;
             }
 
             try {
                 let result;
-                if (isTiffFile(files[i].file.name)) {
+                if (isImageFile(files[i].file.name)) {
+                    if (progressDetail) progressDetail.textContent = `${files[i].file.name} — Fotoğraf → PDF oluşturuluyor...`;
+                    result = await convertImageToPdf(files[i].file);
+                } else if (isTiffFile(files[i].file.name)) {
                     if (progressDetail) progressDetail.textContent = `${files[i].file.name} — TIFF → PDF oluşturuluyor...`;
                     const useOcr = ocrCheckbox && ocrCheckbox.checked;
                     result = await convertTiffToPdf(files[i].file, useOcr);
@@ -593,6 +643,7 @@
         if (msg.includes('End of data')) return 'Dosya bozuk — eksik veya tamamlanmamış arşiv.';
         if (msg.includes('TIFF')) return 'Geçerli bir TIFF dosyası değil veya dosya bozuk.';
         if (msg.includes('UTIF')) return 'TIFF dosyası işlenirken hata oluştu. Dosya formatını kontrol edin.';
+        if (msg.includes('Fotoğraf')) return msg;
         if (msg.includes('docx')) return 'Word dönüştürme hatası: ' + msg;
         if (msg.includes('Tesseract') || msg.includes('OCR')) return 'OCR işlemi başarısız: ' + msg;
         return 'Dönüştürme sırasında bir hata oluştu: ' + msg;
@@ -2230,6 +2281,93 @@
         }
         html += '</table>';
         return html;
+    }
+
+    // ── Image to PDF Conversion ──
+    async function convertImageToPdf(file) {
+        // Read raw file bytes as base64 — passed directly to jsPDF for zero quality loss
+        const rawBase64 = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = () => reject(new Error('Fotoğraf dosyası okunamadı: ' + file.name));
+            reader.readAsDataURL(file);
+        });
+
+        // Load image to get dimensions
+        const img = await new Promise((resolve, reject) => {
+            const i = new Image();
+            i.onload = () => resolve(i);
+            i.onerror = () => reject(new Error('Fotoğraf dosyası okunamadı: ' + file.name));
+            i.src = rawBase64;
+        });
+
+        const imgW = img.naturalWidth;
+        const imgH = img.naturalHeight;
+
+        // A4 dimensions in mm
+        const a4W = 210;
+        const a4H = 297;
+        const margin = 10; // mm
+
+        // Determine orientation based on image aspect ratio
+        const isLandscape = imgW > imgH;
+        const orientation = isLandscape ? 'landscape' : 'portrait';
+        const pageW = isLandscape ? a4H : a4W;
+        const pageH = isLandscape ? a4W : a4H;
+        const availW = pageW - margin * 2;
+        const availH = pageH - margin * 2;
+
+        // Scale to fit within available area, preserving aspect ratio
+        const scale = Math.min(availW / imgW, availH / imgH, 1);
+        const drawW = imgW * scale;
+        const drawH = imgH * scale;
+
+        // Center on page
+        const x = margin + (availW - drawW) / 2;
+        const y = margin + (availH - drawH) / 2;
+
+        const doc = new jsPDF({ orientation, unit: 'mm', format: 'a4' });
+
+        const ext = getFileExtension(file.name);
+        let imgData = rawBase64;
+        let format = 'JPEG';
+        if (ext === '.png') {
+            format = 'PNG';
+        } else if (ext === '.jpg' || ext === '.jpeg') {
+            format = 'JPEG';
+        } else {
+            // BMP, GIF, WebP → render to canvas as PNG
+            const canvas = document.createElement('canvas');
+            canvas.width = imgW;
+            canvas.height = imgH;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0);
+            imgData = canvas.toDataURL('image/png');
+            format = 'PNG';
+        }
+
+        doc.addImage(imgData, format, x, y, drawW, drawH);
+
+        const blob = doc.output('blob');
+        return blob;
+    }
+
+    // ── PDF Merge ──
+    async function mergePdfsAndDownload(entries) {
+        if (typeof PDFLib === 'undefined') {
+            throw new Error('PDF birleştirme kütüphanesi yüklenemedi. Sayfayı yenileyip tekrar deneyin.');
+        }
+        const { PDFDocument } = PDFLib;
+        const merged = await PDFDocument.create();
+        for (const entry of entries) {
+            const buf = await entry.result.arrayBuffer();
+            const src = await PDFDocument.load(buf);
+            const pages = await merged.copyPages(src, src.getPageIndices());
+            pages.forEach(p => merged.addPage(p));
+        }
+        const blob = new Blob([await merged.save()], { type: 'application/pdf' });
+        downloadBlob(blob, 'birlestirilmis.pdf');
+        trackEvent('file_download', { file_count: entries.length, download_type: 'merged_pdf' });
     }
 
     // ── Download Helpers ──
