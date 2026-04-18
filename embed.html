@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UDF / TIFF / ZIP to PDF Dönüştürücü</title>
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="icon" type="image/svg+xml" href="https://convertudftopdf.com/favicon.svg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --success: #16a34a;
+            --success-hover: #15803d;
+            --danger: #dc2626;
+            --bg: #ffffff;
+            --surface: #f8fafc;
+            --border: #e2e8f0;
+            --text: #1e293b;
+            --text-muted: #64748b;
+            --radius: 12px;
+            --shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            padding: 16px;
+            min-height: 100vh;
+        }
+
+        /* Branding bar */
+        .embed-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 16px;
+            background: linear-gradient(135deg, #1e40af, #2563eb);
+            border-radius: var(--radius) var(--radius) 0 0;
+            color: white;
+        }
+        .embed-header-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .embed-header svg {
+            width: 24px;
+            height: 24px;
+            flex-shrink: 0;
+        }
+        .embed-header h1 {
+            font-size: 15px;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+        }
+        .embed-header a {
+            color: rgba(255,255,255,0.85);
+            font-size: 12px;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        .embed-header a:hover { color: white; }
+
+        /* Converter card */
+        .converter-card {
+            border: 1px solid var(--border);
+            border-top: none;
+            border-radius: 0 0 var(--radius) var(--radius);
+            background: var(--bg);
+            overflow: hidden;
+        }
+
+        /* Drop zone */
+        .drop-zone {
+            padding: 40px 24px;
+            text-align: center;
+            border: 2px dashed var(--border);
+            border-radius: var(--radius);
+            margin: 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: var(--surface);
+        }
+        .drop-zone:hover, .drop-zone.drag-over {
+            border-color: var(--primary);
+            background: #eff6ff;
+        }
+        .drop-zone.drag-over {
+            transform: scale(1.01);
+        }
+        .upload-icon {
+            width: 48px;
+            height: 48px;
+            color: var(--primary);
+            margin-bottom: 12px;
+        }
+        .drop-zone h3 {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: var(--text);
+        }
+        .drop-zone p {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-bottom: 16px;
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s;
+            text-decoration: none;
+        }
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+        .btn-primary:hover { background: var(--primary-hover); }
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+        .btn-success:hover { background: var(--success-hover); }
+        .btn-ghost {
+            background: transparent;
+            color: var(--danger);
+            padding: 6px 12px;
+        }
+        .btn-ghost:hover { background: #fef2f2; }
+        .btn-lg { padding: 12px 24px; font-size: 15px; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* File list */
+        .file-list {
+            padding: 0 16px 16px;
+        }
+        .file-list-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .file-list-header h3 { font-size: 14px; font-weight: 600; }
+        .file-items {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .file-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            background: var(--surface);
+            border-radius: 8px;
+            font-size: 13px;
+        }
+        .file-item .file-name {
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-weight: 500;
+        }
+        .file-item .file-size {
+            color: var(--text-muted);
+            font-size: 12px;
+            white-space: nowrap;
+        }
+        .file-item .file-status {
+            font-size: 12px;
+            white-space: nowrap;
+        }
+        .file-item .file-status.success { color: var(--success); }
+        .file-item .file-status.error { color: var(--danger); }
+        .file-item .remove-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 2px;
+            font-size: 16px;
+            line-height: 1;
+        }
+        .file-item .remove-btn:hover { color: var(--danger); }
+        .file-item .file-checkbox {
+            width: 16px;
+            height: 16px;
+            accent-color: var(--primary);
+        }
+        .file-item .file-actions {
+            display: flex;
+            gap: 4px;
+        }
+        .file-item .file-actions button {
+            background: none;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 3px 8px;
+            font-size: 11px;
+            cursor: pointer;
+            color: var(--text-muted);
+            font-family: inherit;
+        }
+        .file-item .file-actions button:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .file-list-actions {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 12px;
+            gap: 8px;
+        }
+        .convert-options {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .format-select {
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 13px;
+            background: white;
+            cursor: pointer;
+        }
+        .ocr-label {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 13px;
+            color: var(--text-muted);
+            cursor: pointer;
+        }
+
+        /* Download bar */
+        .download-bar {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 12px;
+            padding: 12px;
+            background: #f0fdf4;
+            border-radius: 8px;
+            flex-wrap: wrap;
+        }
+        .select-all-label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            cursor: pointer;
+        }
+        .selected-count {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+        .download-bar-buttons {
+            display: flex;
+            gap: 8px;
+            margin-left: auto;
+            flex-wrap: wrap;
+        }
+
+        /* Progress */
+        .progress-area {
+            padding: 16px;
+        }
+        .progress-bar-container {
+            height: 6px;
+            background: var(--border);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        .progress-bar {
+            height: 100%;
+            background: var(--primary);
+            border-radius: 3px;
+            width: 0%;
+            transition: width 0.3s;
+        }
+        .progress-text {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-top: 8px;
+            text-align: center;
+        }
+        .progress-detail {
+            font-size: 12px;
+            color: var(--text-muted);
+            text-align: center;
+            margin-top: 4px;
+        }
+
+        /* Preview modal */
+        .preview-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 1000;
+            background: rgba(0,0,0,0.6);
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+        .preview-modal.active { display: flex; }
+        .preview-modal-content {
+            background: white;
+            border-radius: var(--radius);
+            width: 100%;
+            max-width: 800px;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 24px;
+            position: relative;
+        }
+        .preview-close {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--text-muted);
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+        }
+        .preview-close:hover { background: var(--surface); }
+
+        /* Security badge */
+        .security-note {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 10px 16px;
+            font-size: 12px;
+            color: var(--text-muted);
+            border-top: 1px solid var(--border);
+        }
+        .security-note svg {
+            width: 14px;
+            height: 14px;
+            color: var(--success);
+            flex-shrink: 0;
+        }
+
+        /* Toast */
+        .toast-container {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .toast {
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            animation: toastIn 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .toast-error { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+        .toast-success { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
+        .toast-close {
+            background: none;
+            border: none;
+            font-size: 18px;
+            cursor: pointer;
+            opacity: 0.6;
+            color: inherit;
+        }
+        @keyframes toastIn { from { transform: translateX(100%); opacity: 0; } }
+        @keyframes toastOut { to { transform: translateX(100%); opacity: 0; } }
+
+        /* Powered by footer */
+        .embed-footer {
+            text-align: center;
+            padding: 8px;
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+        .embed-footer a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .embed-footer a:hover { text-decoration: underline; }
+
+        /* Responsive */
+        @media (max-width: 480px) {
+            body { padding: 8px; }
+            .drop-zone { padding: 24px 16px; }
+            .file-list-actions { flex-direction: column; }
+            .download-bar-buttons { margin-left: 0; width: 100%; }
+            .download-bar-buttons .btn { flex: 1; justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="embed-header">
+        <div class="embed-header-left">
+            <svg viewBox="0 0 64 64" fill="none"><rect x="8" y="8" width="48" height="48" rx="6" stroke="white" stroke-width="2.5" fill="none"/><path d="M20 24h24M20 32h24M20 40h16" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>
+            <h1>UDF / TIFF / ZIP → PDF Dönüştürücü</h1>
+        </div>
+        <a href="https://convertudftopdf.com" target="_blank" rel="noopener">convertudftopdf.com ↗</a>
+    </div>
+
+    <!-- Converter -->
+    <div class="converter-card">
+        <div id="dropZone" class="drop-zone" role="button" tabindex="0">
+            <svg class="upload-icon" viewBox="0 0 64 64" fill="none">
+                <rect x="8" y="16" width="48" height="40" rx="4" stroke="currentColor" stroke-width="2.5" fill="none"/>
+                <path d="M24 8h16v8H24V8z" stroke="currentColor" stroke-width="2.5" rx="2" fill="none"/>
+                <path d="M32 28v16M26 34l6-6 6 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <h3>.udf, .tiff, fotoğraf veya .zip dosyanızı sürükleyin</h3>
+            <p>Birden fazla dosya seçebilirsiniz — ZIP içindekiler otomatik çıkarılır</p>
+            <button id="selectBtn" class="btn btn-primary">Dosya Seç</button>
+            <input type="file" id="fileInput" accept=".udf,.tiff,.tif,.zip,.jpg,.jpeg,.png,.bmp,.gif,.webp" multiple hidden>
+        </div>
+
+        <!-- File List -->
+        <div id="fileList" class="file-list" hidden>
+            <div class="file-list-header">
+                <h3>Dosyalar</h3>
+                <button id="clearAllBtn" class="btn btn-ghost">Temizle</button>
+            </div>
+            <div id="fileItems" class="file-items"></div>
+            <div class="file-list-actions">
+                <div class="convert-options">
+                    <select id="formatSelect" class="format-select">
+                        <option value="pdf">PDF</option>
+                        <option value="docx">Word (.docx)</option>
+                    </select>
+                    <label class="ocr-label" title="TIFF dosyalarında metin tanıma (OCR)">
+                        <input type="checkbox" id="ocrCheckbox">
+                        <span>OCR</span>
+                    </label>
+                </div>
+                <button id="convertAllBtn" class="btn btn-primary btn-lg">
+                    <svg viewBox="0 0 20 20" fill="currentColor" width="20" height="20"><path d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"/></svg>
+                    Tümünü Dönüştür
+                </button>
+            </div>
+            <div id="downloadBar" class="download-bar" hidden>
+                <label class="select-all-label">
+                    <input type="checkbox" id="selectAllCheckbox" checked>
+                    <span>Tümünü Seç</span>
+                </label>
+                <span id="selectedCount" class="selected-count"></span>
+                <div class="download-bar-buttons">
+                    <button id="downloadSelectedBtn" class="btn btn-success btn-lg">
+                        <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18"><path d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"/></svg>
+                        Seçilenleri İndir
+                    </button>
+                    <button id="mergeBtn" class="btn btn-primary btn-lg" disabled>
+                        <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18"><path d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z"/><path d="M8 11h4M10 9v4" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg>
+                        Tek PDF Olarak Birleştir
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Progress -->
+        <div id="progressArea" class="progress-area" hidden>
+            <div class="progress-bar-container">
+                <div id="progressBar" class="progress-bar"></div>
+            </div>
+            <p id="progressText" class="progress-text">Dönüştürülüyor...</p>
+            <p id="progressDetail" class="progress-detail"></p>
+        </div>
+
+        <!-- Security note -->
+        <div class="security-note">
+            <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clip-rule="evenodd"/></svg>
+            UDF, TIFF, ZIP ve fotoğraf destekli — dosyalarınız sunucuya yüklenmez, tüm işlem tarayıcınızda gerçekleşir
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="embed-footer">
+        Powered by <a href="https://convertudftopdf.com" target="_blank" rel="noopener">convertudftopdf.com</a>
+    </div>
+
+    <!-- Preview Modal -->
+    <div id="previewModal" class="preview-modal">
+        <div class="preview-modal-content">
+            <button id="previewClose" class="preview-close">&times;</button>
+            <div id="previewContent"></div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <!-- Dependencies -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://unpkg.com/utif@3.1.0/UTIF.js"></script>
+    <script src="converter.js"></script>
+</body>
+</html>
