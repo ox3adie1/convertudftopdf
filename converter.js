@@ -67,7 +67,8 @@
     }
 
     // ── File Type Helpers ──
-    const WORD_EXTENSIONS = ['.docx', '.doc', '.docm', '.dotx', '.dotm'];
+    const WORD_EXTENSIONS = ['.docx', '.docm', '.dotx', '.dotm'];
+    const OLD_WORD_EXTENSION = '.doc';
     const CONVERTIBLE_EXTENSIONS = ['.udf', '.tiff', '.tif', ...WORD_EXTENSIONS];
     const IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.bmp', '.gif', '.webp'];
     function getFileExtension(name) { return name.toLowerCase().substring(name.lastIndexOf('.')); }
@@ -311,8 +312,12 @@
                 addedCount++;
                 continue;
             }
+            if (getFileExtension(f.name) === OLD_WORD_EXTENSION) {
+                showToast(`"${f.name}" eski Word (.doc) formatı desteklenmiyor. Lütfen dosyayı Word'de açıp .docx olarak kaydedin.`, 'warning');
+                continue;
+            }
             if (!isConvertibleFile(f.name)) {
-                showToast(`"${f.name}" desteklenmeyen dosya formatı. Yalnızca .udf, Word (.docx/.doc/.docm/.dotx/.dotm), .tiff, .zip ve fotoğraf dosyaları kabul edilir.`, 'warning');
+                showToast(`"${f.name}" desteklenmeyen dosya formatı. Yalnızca .udf, Word (.docx/.docm/.dotx/.dotm), .tiff, .zip ve fotoğraf dosyaları kabul edilir.`, 'warning');
                 continue;
             }
 
