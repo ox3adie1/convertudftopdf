@@ -1,0 +1,55 @@
+# convertudftopdf.com
+
+> Ücretsiz, tarayıcı tabanlı UDF (UYAP Doküman Formatı) → PDF dönüştürücü. Türk mahkeme belgelerini (.udf uzantılı dosyalar) hiçbir sunucuya yükleme yapmadan 100% istemci tarafında PDF'e çevirir. Avukatlar, hakimler, stajyerler ve vatandaşlar için tasarlanmıştır.
+
+convertudftopdf.com, UYAP (Ulusal Yargı Ağı Bilişim Sistemi) sisteminde kullanılan kapalı formattaki `.udf` uzantılı mahkeme belgelerini evrensel PDF formatına dönüştürmek için geliştirilmiş ücretsiz, açık ve gizlilik öncelikli bir web aracıdır. Tüm dönüşüm işlemi kullanıcının tarayıcısında JavaScript ile yapılır — dosyalar sunucuya yüklenmez.
+
+## Ana Araç
+- [UDF to PDF Dönüştürücü](https://convertudftopdf.com/): UDF, TIFF, JPG/PNG dosyalarını PDF'e çevirir. Toplu dönüşüm, ZIP otomatik çıkarma, OCR, PDF birleştirme desteği.
+- [UDF to PDF (EN)](https://convertudftopdf.com/en/): İngilizce ana sayfa.
+
+## Rehber Sayfaları
+- [UDF Nedir?](https://convertudftopdf.com/udf-nedir.html): UDF formatının ne olduğu, yapısı ve UYAP sistemindeki rolü.
+- [UDF Dosyası Açma](https://convertudftopdf.com/udf-dosyasi-acma.html): UDF dosyalarını Windows, Mac ve mobilde açmanın yöntemleri.
+- [UDF Dosyasını Telefonda Açma](https://convertudftopdf.com/udf-dosyasi-telefonda-acma.html): iPhone ve Android cihazlarda UDF açma ve PDF'e çevirme.
+- [UDF to PDF](https://convertudftopdf.com/udf-to-pdf.html): UDF dosyasını PDF'e dönüştürme rehberi.
+- [UDF'den Word'e](https://convertudftopdf.com/udf-dosyasi-word-cevirme.html): UDF dosyasını Word (.docx) formatına çevirme.
+- [Word'den UDF'e](https://convertudftopdf.com/word-udf-cevirme.html): DOCX dosyalarını UDF formatına dönüştürme.
+- [UDF Sorun Giderme](https://convertudftopdf.com/udf-sorun-giderme.html): UDF açma/dönüştürme hatalarının çözümü.
+- [UDF Dijital İmza Doğrulama](https://convertudftopdf.com/udf-dijital-imza-dogrulama.html): PKCS#7 imzasını doğrulama.
+- [UDF Format Spesifikasyonu](https://convertudftopdf.com/udf-format-spec.html): UDF dosya yapısının teknik detayı.
+
+## UYAP İçerikleri
+- [UYAP Rehberi](https://convertudftopdf.com/uyap-rehber.html): UYAP sisteminin genel kullanımı.
+- [UYAP Sözlüğü](https://convertudftopdf.com/uyap-sozluk.html): UYAP terminolojisi.
+- [UYAP PDF Dönüştürücü](https://convertudftopdf.com/uyap-pdf-donusturucu.html): UYAP belgeleri için özel dönüştürücü bilgisi.
+
+## Hedef Kitle Rehberleri
+- [Avukatlar için UDF](https://convertudftopdf.com/avukatlar-icin-udf.html): Avukatların UDF iş akışı.
+- [Hakim UDF Kullanımı](https://convertudftopdf.com/hakim-udf-kullanimi.html): Hakimler için UDF kullanımı.
+- [Stajyer Avukat UDF Rehberi](https://convertudftopdf.com/stajyer-avukat-udf-rehberi.html): Stajyer avukatlar için başlangıç rehberi.
+- [Vatandaş UDF Rehberi](https://convertudftopdf.com/vatandas-udf-rehberi.html): Genel kullanıcılar için UDF rehberi.
+
+## Kurumsal
+- [Hakkımızda](https://convertudftopdf.com/hakkimizda.html): Proje ve ekip hakkında.
+- [İletişim](https://convertudftopdf.com/iletisim.html): info@convertudftopdf.com
+- [Gizlilik Politikası](https://convertudftopdf.com/privacy.html): Veri saklamadığımıza dair açıklama.
+- [Kullanım Şartları](https://convertudftopdf.com/kullanim-sartlari.html): Kullanım koşulları.
+- [UDF vs PDF Karşılaştırma](https://convertudftopdf.com/karsilastirma.html): İki format arasındaki farklar.
+
+## Teknik Özellikler
+- Tüm işlem tarayıcıda yapılır; dosyalar sunucuya yüklenmez.
+- Maksimum dosya boyutu: 10 MB.
+- Desteklenen giriş: .udf, .tiff/.tif, .jpg/.jpeg, .png, .gif, .bmp, .webp, .zip (içindeki desteklenen dosyalar otomatik çıkarılır), .docx (→ UDF dönüşümü).
+- Desteklenen çıkış: .pdf, .docx.
+- Türkçe karakter desteği (ş, ç, ğ, ı, ö, ü) için Noto Serif fontu gömülü.
+- PKCS#7 dijital imza bilgisi çıkarılır ve gösterilir.
+- PWA — çevrimdışı kullanılabilir.
+- Açık kaynak değil ancak istemci tarafında çalıştığı için tüm kod tarayıcıdan görülebilir.
+
+## Marka
+- İsim: UDF to PDF Converter (convertudftopdf.com)
+- Ana alan: convertudftopdf.com
+- Eski alan: udfkit.com (şu an 301 yönlendirme ile ana alana akıyor)
+- Dil: Türkçe (ana), İngilizce (`/en/` altında)
+- Lisans: Kullanım ücretsizdir; kayıt gerektirmez.
