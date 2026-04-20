@@ -3076,6 +3076,12 @@
         const { PDFDocument } = PDFLib;
         const merged = await PDFDocument.create();
         for (const entry of entries) {
+            // Images: embed directly via pdf-lib — jsPDF output streams don't
+            // survive pdf-lib's copyPages cleanly (produces blank pages).
+            if (isImageFile(entry.file.name)) {
+                await addImageAsPage(merged, entry.file);
+                continue;
+            }
             const buf = await entry.result.arrayBuffer();
             const src = await PDFDocument.load(buf);
             const pages = await merged.copyPages(src, src.getPageIndices());
@@ -3084,6 +3090,54 @@
         const blob = new Blob([await merged.save()], { type: 'application/pdf' });
         downloadBlob(blob, 'birlestirilmis.pdf');
         trackEvent('file_download', { file_count: entries.length, download_type: 'merged_pdf' });
+    }
+
+    async function addImageAsPage(pdfDoc, file) {
+        const ext = getFileExtension(file.name);
+        let image;
+        if (ext === '.jpg' || ext === '.jpeg') {
+            image = await pdfDoc.embedJpg(await file.arrayBuffer());
+        } else if (ext === '.png') {
+            image = await pdfDoc.embedPng(await file.arrayBuffer());
+        } else {
+            const dataUrl = await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = () => reject(new Error('Fotoğraf okunamadı: ' + file.name));
+                reader.readAsDataURL(file);
+            });
+            const img = await new Promise((resolve, reject) => {
+                const i = new Image();
+                i.onload = () => resolve(i);
+                i.onerror = () => reject(new Error('Fotoğraf okunamadı: ' + file.name));
+                i.src = dataUrl;
+            });
+            const canvas = document.createElement('canvas');
+            canvas.width = img.naturalWidth;
+            canvas.height = img.naturalHeight;
+            canvas.getContext('2d').drawImage(img, 0, 0);
+            const base64 = canvas.toDataURL('image/png').split(',')[1];
+            const bytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+            image = await pdfDoc.embedPng(bytes);
+        }
+
+        const mmToPt = 2.8346456692913;
+        const a4W = 210, a4H = 297, margin = 10;
+        const imgW = image.width, imgH = image.height;
+        const isLandscape = imgW > imgH;
+        const pageW_mm = isLandscape ? a4H : a4W;
+        const pageH_mm = isLandscape ? a4W : a4H;
+        const pageW = pageW_mm * mmToPt;
+        const pageH = pageH_mm * mmToPt;
+        const availW = (pageW_mm - margin * 2) * mmToPt;
+        const availH = (pageH_mm - margin * 2) * mmToPt;
+        const scale = Math.min(availW / imgW, availH / imgH, 1);
+        const drawW = imgW * scale;
+        const drawH = imgH * scale;
+        const x = (pageW - drawW) / 2;
+        const y = (pageH - drawH) / 2;
+        const page = pdfDoc.addPage([pageW, pageH]);
+        page.drawImage(image, { x, y, width: drawW, height: drawH });
     }
 
     // ── Download Helpers ──
