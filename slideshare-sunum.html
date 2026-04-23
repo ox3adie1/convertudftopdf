@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UDF Kit — UDF to PDF Converter Sunum</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #f0f4f8;
+    color: #1a365d;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .slide {
+    width: 960px;
+    height: 540px;
+    margin: 20px auto;
+    background: #ffffff;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.12);
+    page-break-after: always;
+    page-break-inside: avoid;
+  }
+
+  .slide-inner {
+    width: 100%;
+    height: 100%;
+    padding: 48px 60px 52px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Footer */
+  .footer {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 32px;
+    background: #1a365d;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 60px;
+    font-size: 11px;
+    color: rgba(255,255,255,0.7);
+    z-index: 2;
+  }
+  .footer a { color: rgba(255,255,255,0.85); text-decoration: none; }
+
+  /* Slide number */
+  .slide-num {
+    position: absolute;
+    bottom: 36px;
+    right: 60px;
+    font-size: 12px;
+    color: #a0aec0;
+    z-index: 2;
+  }
+
+  /* Decorative corner */
+  .corner-deco {
+    position: absolute;
+    top: 0; right: 0;
+    width: 120px; height: 120px;
+    background: linear-gradient(135deg, transparent 50%, rgba(49,130,206,0.08) 50%);
+    z-index: 0;
+  }
+
+  /* Top accent bar */
+  .accent-bar {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 5px;
+    background: linear-gradient(90deg, #1a365d, #3182ce);
+    z-index: 2;
+  }
+
+  /* Typography */
+  h1 { font-size: 36px; font-weight: 700; color: #1a365d; line-height: 1.2; margin-bottom: 16px; }
+  h2 { font-size: 30px; font-weight: 700; color: #1a365d; line-height: 1.25; margin-bottom: 20px; }
+  h3 { font-size: 20px; font-weight: 600; color: #3182ce; margin-bottom: 12px; }
+  p, li { font-size: 17px; line-height: 1.6; color: #2d3748; }
+  ul { list-style: none; padding: 0; }
+  ul li { padding-left: 24px; position: relative; margin-bottom: 8px; }
+  ul li::before { content: "●"; color: #3182ce; position: absolute; left: 0; font-size: 10px; top: 5px; }
+
+  /* Cover slide */
+  .slide-cover { background: linear-gradient(135deg, #1a365d 0%, #2c5282 60%, #3182ce 100%); }
+  .slide-cover .slide-inner { justify-content: center; align-items: center; text-align: center; }
+  .slide-cover h1 { color: #fff; font-size: 42px; margin-bottom: 8px; }
+  .slide-cover .subtitle { color: rgba(255,255,255,0.85); font-size: 20px; margin-bottom: 28px; font-weight: 300; }
+  .slide-cover .logo-icon { font-size: 56px; margin-bottom: 20px; }
+  .slide-cover .url { color: #90cdf4; font-size: 16px; margin-top: 12px; letter-spacing: 0.5px; }
+  .slide-cover .footer { background: rgba(0,0,0,0.2); }
+  .slide-cover .accent-bar { background: linear-gradient(90deg, #90cdf4, #3182ce); }
+
+  /* Closing slide */
+  .slide-closing { background: linear-gradient(135deg, #1a365d 0%, #2c5282 60%, #3182ce 100%); }
+  .slide-closing .slide-inner { justify-content: center; align-items: center; text-align: center; }
+  .slide-closing h1 { color: #fff; font-size: 44px; }
+  .slide-closing p { color: rgba(255,255,255,0.9); font-size: 20px; }
+  .slide-closing .cta-url { color: #fff; font-size: 28px; font-weight: 700; margin-top: 24px; padding: 14px 40px; border: 3px solid #90cdf4; border-radius: 12px; display: inline-block; letter-spacing: 0.5px; }
+  .slide-closing .footer { background: rgba(0,0,0,0.2); }
+  .slide-closing .accent-bar { background: linear-gradient(90deg, #90cdf4, #3182ce); }
+
+  /* Card / box */
+  .card {
+    background: #f7fafc;
+    border: 1px solid #e2e8f0;
+    border-left: 4px solid #3182ce;
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin-bottom: 12px;
+  }
+  .card-title { font-size: 15px; font-weight: 700; color: #1a365d; margin-bottom: 4px; }
+  .card-text { font-size: 14px; color: #4a5568; }
+
+  /* Step badge */
+  .step-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px; height: 48px;
+    background: #3182ce;
+    color: #fff;
+    border-radius: 50%;
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 12px;
+    flex-shrink: 0;
+  }
+
+  /* Icon circle */
+  .icon-circle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px; height: 56px;
+    background: linear-gradient(135deg, #ebf8ff, #bee3f8);
+    border-radius: 50%;
+    font-size: 28px;
+    margin-bottom: 14px;
+    flex-shrink: 0;
+  }
+
+  /* Two-column layout */
+  .two-col { display: flex; gap: 32px; align-items: flex-start; }
+  .two-col > * { flex: 1; }
+
+  /* Step row */
+  .step-row { display: flex; gap: 20px; align-items: flex-start; margin-bottom: 14px; }
+  .step-content { flex: 1; }
+  .step-content h3 { margin-bottom: 4px; font-size: 17px; }
+  .step-content p { font-size: 14px; color: #4a5568; }
+
+  /* Highlight URL */
+  .url-highlight {
+    display: inline-block;
+    background: #ebf8ff;
+    border: 2px solid #3182ce;
+    border-radius: 8px;
+    padding: 8px 20px;
+    font-size: 18px;
+    font-weight: 700;
+    color: #1a365d;
+    margin-top: 10px;
+    letter-spacing: 0.3px;
+  }
+
+  /* Security grid */
+  .sec-grid { display: flex; gap: 16px; flex-wrap: wrap; }
+  .sec-item { flex: 1; min-width: 200px; background: #f7fafc; border-radius: 8px; padding: 16px; text-align: center; border: 1px solid #e2e8f0; }
+  .sec-item .icon { font-size: 32px; margin-bottom: 8px; }
+  .sec-item h3 { font-size: 14px; color: #1a365d; margin-bottom: 4px; }
+  .sec-item p { font-size: 13px; color: #718096; }
+
+  /* Feature list */
+  .feat-list { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 8px; }
+  .feat-chip { background: #ebf8ff; border-radius: 20px; padding: 6px 16px; font-size: 14px; color: #2c5282; font-weight: 500; }
+
+  @media print {
+    body { background: white; }
+    .slide { box-shadow: none; margin: 0; width: 100%; height: 100vh; }
+  }
+
+  @page {
+    size: 960px 540px landscape;
+    margin: 0;
+  }
+</style>
+    <script src="https://analytics.ahrefs.com/analytics.js" data-key="+xkoyzioDoOn7GkH9gzyMQ" async></script>
+</head>
+<body>
+
+<!-- SLIDE 1: KAPAK -->
+<div class="slide slide-cover">
+  <div class="accent-bar"></div>
+  <div class="slide-inner">
+    <div class="logo-icon">&#128196;</div>
+    <h1>UDF Kit &mdash; UDF to PDF Converter</h1>
+    <div class="subtitle">UYAP Belgelerinizi Kolayca PDF'e D&ouml;n&uuml;st&uuml;r&uuml;n</div>
+    <div class="url">convertudftopdf.com</div>
+  </div>
+  <div class="footer">
+    <span>UDF Kit Sunum 2026</span>
+    <a href="https://convertudftopdf.com">convertudftopdf.com</a>
+  </div>
+</div>
+
+<!-- SLIDE 2: UDF Dosyasi Nedir -->
+<div class="slide">
+  <div class="accent-bar"></div>
+  <div class="corner-deco"></div>
+  <div class="slide-inner">
+    <div class="icon-circle">&#128206;</div>
+    <h2>UDF Dosyas&#305; Nedir?</h2>
+    <div class="two-col">
+      <div>
+        <p>UDF (UYAP Dok&uuml;man Format&#305;), T&uuml;rkiye&rsquo;nin yarg&#305; bili&#351;im sistemi <strong>UYAP</strong> taraf&#305;ndan &uuml;retilen &ouml;zel bir belge format&#305;d&#305;r.</p>
+        <ul style="margin-top:12px">
+          <li>Mahkeme kararlar&#305; ve duru&#351;ma tutanaklar&#305;</li>
+          <li>Savc&#305;l&#305;k evraklar&#305; ve iddianameler</li>
+          <li>Bilirki&#351;i raporlar&#305;</li>
+          <li>Tapu, n&uuml;fus ve di&#287;er resmi belgeler</li>
+        </ul>
+      </div>
+      <div>
+        <div class="card">
+          <div class="card-title">&#128274; &Ouml;zel Format</div>
+          <div class="card-text">UDF dosyalar&#305; standart PDF okuyucularla a&ccedil;&#305;lamaz. &Ouml;zel bir d&ouml;n&uuml;&#351;t&uuml;rme arac&#305;na ihtiyac&#305;n&#305;z vard&#305;r.</div>
+        </div>
+        <div class="card">
+          <div class="card-title">&#128195; .udf Uzant&#305;s&#305;</div>
+          <div class="card-text">Dosyalar &ldquo;.udf&rdquo; uzant&#305;s&#305;yla kaydedilir ve genellikle UYAP sistemi &uuml;zerinden indirilir.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-num">2 / 12</div>
+  <div class="footer">
+    <span>UDF Kit &mdash; UDF to PDF Converter</span>
+    <a href="https://convertudftopdf.com">convertudftopdf.com</a>
+  </div>
+</div>
+
+<!-- SLIDE 3: UYAP Sistemi ve UDF Formati -->
+<div class="slide">
+  <div class="accent-bar"></div>
+  <div class="corner-deco"></div>
+  <div class="slide-inner">
+    <div class="icon-circle">&#9878;</div>
+    <h2>UYAP Sistemi ve UDF Format&#305;</h2>
+    <div class="two-col">
+      <div>
+        <h3>UYAP Nedir?</h3>
+        <p><strong>Ulusal Yarg&#305; A&#287;&#305; Bili&#351;im Sistemi</strong>, T&uuml;rkiye&rsquo;deki t&uuml;m yarg&#305; s&uuml;re&ccedil;lerini dijital ortamda y&ouml;neten merkezi platformdur.</p>
+        <ul style="margin-top:12px">
+          <li>13.000+ mahkeme ba&#287;l&#305;</li>
+          <li>Y&#305;lda milyonlarca belge &uuml;retilir</li>
+          <li>Avukatlar e-imza ile eri&#351;ir</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Neden UDF Format&#305;?</h3>
+        <div class="card">
+          <div class="card-title">&#128737; G&uuml;venlik</div>
+          <div class="card-text">Belgelerin b&uuml;t&uuml;nl&uuml;&#287;&uuml;n&uuml; ve orijinalli&#287;ini korumak i&ccedil;in &ouml;zel format kullan&#305;l&#305;r.</div>
+        </div>
+        <div class="card">
+          <div class="card-title">&#10003; Do&#287;rulama</div>
+          <div class="card-text">E-imza ve zaman damgas&#305; ile belge do&#287;rulamas&#305; yap&#305;l&#305;r.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-num">3 / 12</div>
+  <div class="footer">
+    <span>UDF Kit &mdash; UDF to PDF Converter</span>
+    <a href="https://convertudftopdf.com">convertudftopdf.com</a>
+  </div>
+</div>
+
+<!-- SLIDE 4: Nerelerde Karşımıza Çıkar -->
+<div class="slide">
+  <div class="accent-bar"></div>
+  <div class="corner-deco"></div>
+  <div class="slide-inner">
+    <div class="icon-circle">&#128101;</div>
+    <h2>UDF Dosyas&#305; Nerelerde Kar&#351;&#305;m&#305;za &Ccedil;&#305;kar?</h2>
+    <div style="display:flex; gap:16px; margin-top:8px;">
+      <div class="card" style="flex:1; text-align:center;">
+        <div style="font-size:36px; margin-bottom:8px;">&#9878;</div>
+        <div class="card-title">Avukatlar</div>
+        <div class="card-text">UYAP Avukat Portal&#305;&rsquo;ndan indirilen dava dosyalar&#305;, karar &ouml;rnekleri ve bildirimler</div>
+      </div>
+      <div class="card" style="flex:1; text-align:center;">
+        <div style="font-size:36px; margin-bottom:8px;">&#127963;</div>
+        <div class="card-title">Mahkemeler</div>
+        <div class="card-text">Hakim ve savc&#305;lar&#305;n UYAP &uuml;zerinden payla&#351;t&#305;&#287;&#305; t&uuml;m resmi evraklar</div>
+      </div>
+      <div class="card" style="flex:1; text-align:center;">
+        <div style="font-size:36px; margin-bottom:8px;">&#128100;</div>
+        <div class="card-title">Vatanda&#351;lar</div>
+        <div class="card-text">e-Devlet &uuml;zerinden al&#305;nan mahkeme kararlar&#305; ve adli belge &ouml;rnekleri</div>
+      </div>
+    </div>
+    <div class="feat-list" style="margin-top:16px; justify-content:center;">
+      <span class="feat-chip">&#128188; Hukuk B&uuml;rolar&#305;</span>
+      <span class="feat-chip">&#127979; &Uuml;niversiteler</span>
+      <span class="feat-chip">&#128202; Bilirki&#351;iler</span>
+      <span class="feat-chip">&#128230; Noterler</span>
+      <span class="feat-chip">&#127970; Kamu Kurumlar&#305;</span>
+    </div>
+  </div>
+  <div class="slide-num">4 / 12</div>
+  <div class="footer">
+    <span>UDF Kit &mdash; UDF to PDF Converter</span>
+    <a href="https://convertudftopdf.com">convertudftopdf.com</a>
+  </div>
+</div>
+
+<!-- SLIDE 5: UDF Dosyasını Açma Yöntemleri -->
+<div class="slide">
+  <div class="accent-bar"></div>
+  <div class="corner-deco"></div>
+  <div class="slide-inner">
+    <div class="icon-circle">&#128736;</div>
+    <h2>UDF Dosyas&#305;n&#305; A&ccedil;ma Y&ouml;ntemleri</h2>
+    <div style="display:flex; gap:20px;">
+      <div style="flex:1;">
+        <div class="card" style="border-left-color:#e53e3e;">
+          <div class="card-title">&#10060; UYAP Edit&ouml;r (Eski Y&ouml;ntem)</div>
+          <div class="card-text">Yaln&#305;zca Windows&rsquo;ta &ccedil;al&#305;&#351;&#305;r. G&uuml;ncellenmedi&#287;i i&ccedil;in uyumluluk sorunlar&#305; ya&#351;an&#305;r. Kurulum gerektirir.</div>
+        </div>
+        <div class="card" style="border-left-color:#dd6b20;">
+          <div class="card-title">&#9888; UYAP Portal</div>
+          <div class="card-text">Yaln&#305;zca e-imza kart&#305; ile giri&#351; yap&#305;labilir. Herkes eri&#351;emez.</div>
+        </div>
+      </div>
+      <div style="flex:1;">
+        <div class="card" style="border-left-color:#38a169; background:#f0fff4;">
+          <div class="card-title">&#10004; Online D&ouml;n&uuml;&#351;t&uuml;r&uuml;c&uuml; (En Kolay)</div>
+          <div class="card-text">Kurulum gerektirmez. Her cihazda &ccedil;al&#305;&#351;&#305;r: bilgisayar, telefon, tablet. Dosya sunucuya y&uuml;klenmez &mdash; tamamen taray&#305;c&#305;da i&#351;lenir.</div>
+        </div>
+        <div style="text-align:center; margin-top:12px;">
+          <span class="url-highlight">convertudftopdf.com</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-num">5 / 12</div>
+  <div class="footer">
+    <span>UDF Kit &mdash; UDF to PDF Converter</span>
+    <a href="https://convertudftopdf.com">convertudftopdf.com</a>
+  </div>
+</div>
+
+<!-- SLIDE 6: Online Dönüştürme -->
+<div class="slide">
+  <div class="accent-bar"></div>
+  <div class="corner-deco"></div>
+  <div class="slide-inner">
+    <div class="icon-circle">&#127760;</div>
+    <h2>Online D&ouml;n&uuml;&#351;t&uuml;rme: convertudftopdf.com</h2>
+    <p style="margin-bottom:16px;">UDF dosyalar&#305;n&#305;z&#305; <strong>3 basit ad&#305;mda</strong> PDF&rsquo;e d&ouml;n&uuml;&#351;t&uuml;r&uuml;n. &Uuml;cretsiz, h&#305;zl&#305; ve g&uuml;venli.</p>
+    <div style="display:flex; gap:16px; margin-bottom:16px;">
+      <div style="flex:1; text-align:center; padding:20px; background:#ebf8ff; border-radius:12px;">
+        <div class="step-badge">1</div>
+        <h3 style="font-size:16px;">Dosya Se&ccedil;</h3>
+        <p style="font-size:13px;">UDF dosyan&#305;z&#305; se&ccedil;in veya s&uuml;r&uuml;kleyip b&#305;rak&#305;n</p>
+      </div>
+      <div style="flex:1; text-align:center; padding:20px; background:#ebf8ff; border-radius:12px;">
+        <div class="step-badge">2</div>
+        <h3 style="font-size:16px;">D&ouml;n&uuml;&#351;t&uuml;r</h3>
+        <p style="font-size:13px;">Otomatik olarak PDF&rsquo;e d&ouml;n&uuml;&#351;t&uuml;r&uuml;l&uuml;r</p>
+      </div>
+      <div style="flex:1; text-align:center; padding:20px; background:#ebf8ff; border-radius:12px;">
+        <div class="step-badge">3</div>
+        <h3 style="font-size:16px;">PDF &#304;ndir</h3>
+        <p style="font-size:13px;">Haz&#305;r PDF dosyan&#305;z&#305; indirin</p>
+      </div>
+    </div>
+    <div style="text-align:center;">
+      <span class="url-highlight" style="font-size:22px;">&#127279; convertudftopdf.com</span>
+    </div>
+  </div>
+  <div class="slide-num">6 / 12</div>
+  <div class="footer">
+    <span>UDF Kit &mdash; UDF to PDF Converter</span>
+    <a href="https://convertudftopdf.com">convertudftopdf.com</a>
+  </div>
+</div>
+
+<!-- SLIDE 7: Adım 1 — Dosya Seç -->
+<div class="slide">
+  <div class="accent-bar"></div>
+  <div class="corner-deco"></div>
+  <div class="slide-inner">
+    <div style="display:flex; gap:40px; align-items:center; height:100%;">
+      <div style="flex:1;">
+        <div class="step-badge" style="width:64px;height:64px;font-size:30px;">1</div>
+        <h2>Ad&#305;m 1: Dosya Se&ccedil;</h2>
+        <ul>
+          <li><strong>&ldquo;Dosya Se&ccedil;&rdquo;</strong> butonuna t&#305;klay&#305;n</li>
+          <li>Veya dosyan&#305;z&#305; s&uuml;r&uuml;kleyip sayfaya b&#305;rak&#305;n</li>
+          <li>.udf uzant&#305;l&#305; dosyay&#305; se&ccedil;in</li>
+          <li>Birden fazla dosya se&ccedil;ebilirsiniz</li>
+        </ul>
+        <div class="url-highlight" style="margin-top:16px;">convertudftopdf.com</div>
+      </div>
+      <div style="flex:0 0 320px; background:#f7fafc; border:2px dashed #3182ce; border-radius:16px; padding:40px; text-align:center;">
+        <div style="font-size:56px; margin-bottom:12px;">&#128449;</div>
+        <p style="font-size:15px; color:#4a5568; font-weight:600;">Dosyan&#305;z&#305; buraya<br>s&uuml;r&uuml;kleyin</p>
+        <p style="font-size:13px; color:#a0aec0; margin-top:8px;">veya t&#305;klayarak se&ccedil;in</p>
+        <div style="margin-top:16px; background:#3182ce; color:#fff; padding:8px 24px; border-radius:8px; display:inline-block; font-size:14px; font-weight:600;">Dosya Se&ccedil;</div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-num">7 / 12</div>
+  <div class="footer">
+    <span>UDF Kit &mdash; UDF to PDF Converter</span>
+    <a href="https://convertudftopdf.com">convertudftopdf.com</a>
+  </div>
+</div>
+
+<!-- SLIDE 8: Adım 2 — Otomatik Dönüştürme -->
+<div class="slide">
+  <div class="accent-bar"></div>
+  <div class="corner-deco"></div>
+  <div class="slide-inner">
+    <div style="display:flex; gap:40px; align-items:center; height:100%;">
+      <div style="flex:1;">
+        <div class="step-badge" style="width:64px;height:64px;font-size:30px;">2</div>
+        <h2>Ad&#305;m 2: Otomatik D&ouml;n&uuml;&#351;t&uuml;rme</h2>
+        <ul>
+          <li>Dosya <strong>taray&#305;c&#305;n&#305;zda</strong> i&#351;lenir</li>
+          <li>Sunucuya herhangi bir veri g&ouml;nderilmez</li>
+          <li>D&ouml;n&uuml;&#351;t&uuml;rme saniyeler i&ccedil;inde tamamlan&#305;r</li>
+          <li>Orijinal format ve d&uuml;zen korunur</li>
+        </ul>
+        <div class="url-highlight" style="margin-top:16px;">convertudftopdf.com</div>
+      </div>
+      <div style="flex:0 0 320px; text-align:center;">
+        <div style="display:flex; align-items:center; justify-content:center; gap:20px;">
+          <div style="text-align:center;">
+            <div style="font-size:48px;">&#128196;</div>
+            <p style="font-size:13px; font-weight:600; color:#4a5568; margin-top:4px;">.udf</p>
+          </div>
+          <div style="font-size:32px; color:#3182ce;">&#10132;</div>
+          <div style="width:72px; height:72px; background:linear-gradient(135deg,#ebf8ff,#bee3f8); border-radius:50%; display:flex; align-items:center; justify-content:center;">
+            <div style="font-size:28px;">&#9881;</div>
+          </div>
+          <div style="font-size:32px; color:#3182ce;">&#10132;</div>
+          <div style="text-align:center;">
+            <div style="font-size:48px;">&#128462;</div>
+            <p style="font-size:13px; font-weight:600; color:#4a5568; margin-top:4px;">.pdf</p>
+          </div>
+        </div>
+        <div style="margin-top:24px; background:#f0fff4; border:1px solid #c6f6d5; border-radius:8px; padding:12px;">
+          <p style="font-size:14px; color:#276749;">&#128274; T&uuml;m i&#351;lemler taray&#305;c&#305;n&#305;zda ger&ccedil;ekle&#351;ir</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-num">8 / 12</div>
+  <div class="footer">
+    <span>UDF Kit &mdash; UDF to PDF Converter</span>
+    <a href="https://convertudftopdf.com">convertudftopdf.com</a>
+  </div>
+</div>
+
+<!-- SLIDE 9: Adım 3 — PDF İndir -->
+<div class="slide">
+  <div class="accent-bar"></div>
+  <div class="corner-deco"></div>
+  <div class="slide-inner">
+    <div style="display:flex; gap:40px; align-items:center; height:100%;">
+      <div style="flex:1;">
+        <div class="step-badge" style="width:64px;height:64px;font-size:30px;">3</div>
+        <h2>Ad&#305;m 3: PDF &#304;ndir</h2>
+        <ul>
+          <li>D&ouml;n&uuml;&#351;t&uuml;rme tamamlan&#305;nca <strong>&ldquo;&#304;ndir&rdquo;</strong> butonuna t&#305;klay&#305;n</li>
+          <li>PDF dosyas&#305; hemen indirilir</li>
+          <li>&#304;stedi&#287;iniz programla a&ccedil;abilirsiniz</li>
+          <li>Yazd&#305;rma ve payla&#351;ma i&ccedil;in haz&#305;r</li>
+        </ul>
+        <div class="url-highlight" style="margin-top:16px;">convertudftopdf.com</div>
+      </div>
+      <div style="flex:0 0 320px; text-align:center;">
+        <div style="background:#f7fafc; border:1px solid #e2e8f0; border-radius:16px; padding:32px;">
+          <div style="font-size:64px; margin-bottom:12px;">&#128462;</div>
+          <p style="font-size:16px; font-weight:700; color:#1a365d; margin-bottom:4px;">belge.pdf</p>
+          <p style="font-size:13px; color:#a0aec0; margin-bottom:16px;">Haz&#305;r!</p>
+          <div style="background:#38a169; color:#fff; padding:10px 32px; border-radius:8px; display:inline-block; font-size:15px; font-weight:600;">&#11015; PDF &#304;ndir</div>
+        </div>
+        <div class="feat-list" style="margin-top:12px; justify-content:center;">
+          <span class="feat-chip">&#128424; Yazd&#305;r</span>
+          <span class="feat-chip">&#128228; Payla&#351;</span>
+          <span class="feat-chip">&#128190; Kaydet</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-num">9 / 12</div>
+  <div class="footer">
+    <span>UDF Kit &mdash; UDF to PDF Converter</span>
+    <a href="https://convertudftopdf.com">convertudftopdf.com</a>
+  </div>
+</div>
+
+<!-- SLIDE 10: Güvenlik -->
+<div class="slide">
+  <div class="accent-bar"></div>
+  <div class="corner-deco"></div>
+  <div class="slide-inner">
+    <div class="icon-circle">&#128737;</div>
+    <h2>G&uuml;venlik &mdash; Taray&#305;c&#305; Tabanl&#305; &#304;&#351;leme</h2>
+    <p style="margin-bottom:18px;">Belgeleriniz <strong>asla bir sunucuya y&uuml;klenmez</strong>. T&uuml;m d&ouml;n&uuml;&#351;t&uuml;rme i&#351;lemi do&#287;rudan taray&#305;c&#305;n&#305;zda ger&ccedil;ekle&#351;ir.</p>
+    <div class="sec-grid">
+      <div class="sec-item">
+        <div class="icon">&#128274;</div>
+        <h3>Sunucuya Y&uuml;kleme Yok</h3>
+        <p>Dosyalar&#305;n&#305;z bilgisayar&#305;n&#305;zdan &ccedil;&#305;kmaz</p>
+      </div>
+      <div class="sec-item">
+        <div class="icon">&#128421;</div>
+        <h3>Yerel &#304;&#351;leme</h3>
+        <p>JavaScript ile taray&#305;c&#305;da d&ouml;n&uuml;&#351;t&uuml;r&uuml;l&uuml;r</p>
+      </div>
+      <div class="sec-item">
+        <div class="icon">&#128683;</div>
+        <h3>Veri Saklanmaz</h3>
+        <p>Hi&ccedil;bir veri kaydedilmez veya saklanmaz</p>
+      </div>
+      <div class="sec-item">
+        <div class="icon">&#9989;</div>
+        <h3>KVKK Uyumlu</h3>
+        <p>Ki&#351;isel veriler korunur</p>
+      </div>
+    </div>
+  </div>
+  <div class="slide-num">10 / 12</div>
+  <div class="footer">
+    <span>UDF Kit &mdash; UDF to PDF Converter</span>
+    <a href="https://convertudftopdf.com">convertudftopdf.com</a>
+  </div>
+</div>
+
+<!-- SLIDE 11: Mobilde UDF Açma -->
+<div class="slide">
+  <div class="accent-bar"></div>
+  <div class="corner-deco"></div>
+  <div class="slide-inner">
+    <div class="icon-circle">&#128241;</div>
+    <h2>Mobilde UDF A&ccedil;ma</h2>
+    <p style="margin-bottom:16px;">convertudftopdf.com mobil cihazlarda da sorunsuz &ccedil;al&#305;&#351;&#305;r. Uygulama indirmenize gerek yok.</p>
+    <div style="display:flex; gap:20px;">
+      <div class="card" style="flex:1; text-align:center;">
+        <div style="font-size:36px; margin-bottom:8px;">&#128241;</div>
+        <div class="card-title">iPhone / Android</div>
+        <div class="card-text">Mobil taray&#305;c&#305;dan siteyi a&ccedil;&#305;n, UDF dosyan&#305;z&#305; se&ccedil;in ve an&#305;nda PDF olarak indirin.</div>
+      </div>
+      <div class="card" style="flex:1; text-align:center;">
+        <div style="font-size:36px; margin-bottom:8px;">&#128187;</div>
+        <div class="card-title">Tablet / iPad</div>
+        <div class="card-text">Geni&#351; ekranda rahat&ccedil;a kullan&#305;n. Safari ve Chrome tam uyumlu.</div>
+      </div>
+      <div class="card" style="flex:1; text-align:center;">
+        <div style="font-size:36px; margin-bottom:8px;">&#128421;</div>
+        <div class="card-title">Masa&uuml;st&uuml;</div>
+        <div class="card-text">Windows, Mac ve Linux &mdash; t&uuml;m modern taray&#305;c&#305;larda &ccedil;al&#305;&#351;&#305;r.</div>
+      </div>
+    </div>
+    <div style="text-align:center; margin-top:16px;">
+      <div class="card" style="display:inline-block; border-left-color:#38a169; background:#f0fff4;">
+        <div class="card-text">&#10004; Uygulama indirmeye gerek yok &nbsp;&bull;&nbsp; &#10004; &Uuml;cretsiz &nbsp;&bull;&nbsp; &#10004; Kay&#305;t gerektirmez</div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-num">11 / 12</div>
+  <div class="footer">
+    <span>UDF Kit &mdash; UDF to PDF Converter</span>
+    <a href="https://convertudftopdf.com">convertudftopdf.com</a>
+  </div>
+</div>
+
+<!-- SLIDE 12: KAPANIŞ -->
+<div class="slide slide-closing">
+  <div class="accent-bar"></div>
+  <div class="slide-inner">
+    <div style="font-size:56px; margin-bottom:20px;">&#128640;</div>
+    <h1>Hemen Deneyin!</h1>
+    <p style="margin-bottom:8px;">UDF dosyalar&#305;n&#305;z&#305; saniyeler i&ccedil;inde PDF&rsquo;e d&ouml;n&uuml;&#351;t&uuml;r&uuml;n.</p>
+    <p style="font-size:17px; color:rgba(255,255,255,0.7); margin-bottom:8px;">&Uuml;cretsiz &bull; G&uuml;venli &bull; Kay&#305;t Gerektirmez</p>
+    <div class="cta-url">convertudftopdf.com</div>
+  </div>
+  <div class="footer" style="background:rgba(0,0,0,0.2);">
+    <span>UDF Kit Sunum 2026</span>
+    <a href="https://convertudftopdf.com" style="color:rgba(255,255,255,0.85);">convertudftopdf.com</a>
+  </div>
+</div>
+
+</body>
+</html>

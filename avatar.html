@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UDF Kit Avatar</title>
+<style>
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: #1a1a2e;
+    gap: 40px;
+    font-family: system-ui;
+    color: #fff;
+  }
+  .preview-row {
+    display: flex;
+    gap: 32px;
+    align-items: end;
+  }
+  .preview-label {
+    text-align: center;
+    font-size: 12px;
+    opacity: 0.5;
+    margin-top: 8px;
+  }
+  .instructions {
+    color: rgba(255,255,255,0.4);
+    font-size: 13px;
+    max-width: 500px;
+    text-align: center;
+    line-height: 1.6;
+  }
+</style>
+    <script src="https://analytics.ahrefs.com/analytics.js" data-key="+xkoyzioDoOn7GkH9gzyMQ" async></script>
+</head>
+<body>
+
+<!-- Main SVG Avatar -->
+<div class="preview-row">
+  <div>
+    <svg id="avatar-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="256" height="256">
+      <defs>
+        <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" style="stop-color:#0f1628"/>
+          <stop offset="50%" style="stop-color:#162044"/>
+          <stop offset="100%" style="stop-color:#1a2a5e"/>
+        </linearGradient>
+        <linearGradient id="docGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" style="stop-color:#3b82f6"/>
+          <stop offset="100%" style="stop-color:#60a5fa"/>
+        </linearGradient>
+        <linearGradient id="arrowGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" style="stop-color:#f59e0b"/>
+          <stop offset="100%" style="stop-color:#fbbf24"/>
+        </linearGradient>
+        <linearGradient id="pdfGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" style="stop-color:#ef4444"/>
+          <stop offset="100%" style="stop-color:#f87171"/>
+        </linearGradient>
+        <linearGradient id="shineGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" style="stop-color:rgba(255,255,255,0.15)"/>
+          <stop offset="50%" style="stop-color:rgba(255,255,255,0.05)"/>
+          <stop offset="100%" style="stop-color:rgba(255,255,255,0)"/>
+        </linearGradient>
+        <filter id="glow">
+          <feGaussianBlur stdDeviation="8" result="blur"/>
+          <feMerge>
+            <feMergeNode in="blur"/>
+            <feMergeNode in="SourceGraphic"/>
+          </feMerge>
+        </filter>
+        <filter id="softShadow">
+          <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#000" flood-opacity="0.3"/>
+        </filter>
+        <clipPath id="roundClip">
+          <rect x="0" y="0" width="512" height="512" rx="96"/>
+        </clipPath>
+      </defs>
+
+      <g clip-path="url(#roundClip)">
+        <!-- Background -->
+        <rect width="512" height="512" fill="url(#bgGrad)"/>
+
+        <!-- Subtle grid pattern -->
+        <g opacity="0.06">
+          <line x1="0" y1="128" x2="512" y2="128" stroke="#fff" stroke-width="0.5"/>
+          <line x1="0" y1="256" x2="512" y2="256" stroke="#fff" stroke-width="0.5"/>
+          <line x1="0" y1="384" x2="512" y2="384" stroke="#fff" stroke-width="0.5"/>
+          <line x1="128" y1="0" x2="128" y2="512" stroke="#fff" stroke-width="0.5"/>
+          <line x1="256" y1="0" x2="256" y2="512" stroke="#fff" stroke-width="0.5"/>
+          <line x1="384" y1="0" x2="384" y2="512" stroke="#fff" stroke-width="0.5"/>
+        </g>
+
+        <!-- Ambient glow behind icons -->
+        <circle cx="180" cy="256" r="100" fill="#3b82f6" opacity="0.08"/>
+        <circle cx="340" cy="256" r="100" fill="#ef4444" opacity="0.08"/>
+
+        <!-- UDF Document Icon (left) -->
+        <g filter="url(#softShadow)" transform="translate(100, 148)">
+          <!-- Doc body -->
+          <rect x="0" y="0" width="120" height="156" rx="12" fill="url(#docGrad)"/>
+          <!-- Folded corner -->
+          <path d="M84,0 L120,0 L120,12 Q120,0 108,0 Z" fill="rgba(0,0,0,0.15)"/>
+          <path d="M84,0 L84,28 Q84,36 92,36 L120,36 Z" fill="#2563eb"/>
+          <path d="M84,0 L84,28 Q84,36 92,36 L120,36 Z" fill="url(#shineGrad)"/>
+          <!-- Text lines -->
+          <rect x="18" y="56" width="60" height="6" rx="3" fill="rgba(255,255,255,0.7)"/>
+          <rect x="18" y="72" width="84" height="6" rx="3" fill="rgba(255,255,255,0.5)"/>
+          <rect x="18" y="88" width="48" height="6" rx="3" fill="rgba(255,255,255,0.5)"/>
+          <rect x="18" y="104" width="72" height="6" rx="3" fill="rgba(255,255,255,0.4)"/>
+          <rect x="18" y="120" width="36" height="6" rx="3" fill="rgba(255,255,255,0.3)"/>
+          <!-- UDF label -->
+          <text x="60" y="148" text-anchor="middle" font-family="'SF Pro Display','Segoe UI',system-ui,sans-serif" font-size="14" font-weight="700" fill="rgba(255,255,255,0.9)" letter-spacing="2">.UDF</text>
+        </g>
+
+        <!-- Arrow -->
+        <g filter="url(#glow)" transform="translate(232, 236)">
+          <path d="M0,20 L32,20 L32,8 L56,24 L32,40 L32,28 L0,28 Z" fill="url(#arrowGrad)"/>
+        </g>
+
+        <!-- PDF Document Icon (right) -->
+        <g filter="url(#softShadow)" transform="translate(296, 148)">
+          <!-- Doc body -->
+          <rect x="0" y="0" width="120" height="156" rx="12" fill="url(#pdfGrad)"/>
+          <!-- Folded corner -->
+          <path d="M84,0 L120,0 L120,12 Q120,0 108,0 Z" fill="rgba(0,0,0,0.15)"/>
+          <path d="M84,0 L84,28 Q84,36 92,36 L120,36 Z" fill="#dc2626"/>
+          <path d="M84,0 L84,28 Q84,36 92,36 L120,36 Z" fill="url(#shineGrad)"/>
+          <!-- Text lines -->
+          <rect x="18" y="56" width="60" height="6" rx="3" fill="rgba(255,255,255,0.7)"/>
+          <rect x="18" y="72" width="84" height="6" rx="3" fill="rgba(255,255,255,0.5)"/>
+          <rect x="18" y="88" width="48" height="6" rx="3" fill="rgba(255,255,255,0.5)"/>
+          <rect x="18" y="104" width="72" height="6" rx="3" fill="rgba(255,255,255,0.4)"/>
+          <rect x="18" y="120" width="36" height="6" rx="3" fill="rgba(255,255,255,0.3)"/>
+          <!-- PDF label -->
+          <text x="60" y="148" text-anchor="middle" font-family="'SF Pro Display','Segoe UI',system-ui,sans-serif" font-size="14" font-weight="700" fill="rgba(255,255,255,0.9)" letter-spacing="2">.PDF</text>
+        </g>
+
+        <!-- Bottom text: UDF KIT -->
+        <text x="256" y="380" text-anchor="middle" font-family="'SF Pro Display','Segoe UI',system-ui,sans-serif" font-size="52" font-weight="800" fill="#fff" letter-spacing="8" opacity="0.95">UDF KIT</text>
+        <text x="256" y="408" text-anchor="middle" font-family="'SF Pro Display','Segoe UI',system-ui,sans-serif" font-size="14" font-weight="500" fill="rgba(255,255,255,0.4)" letter-spacing="4">CONVERTER</text>
+
+        <!-- Top shine overlay -->
+        <rect width="512" height="512" fill="url(#shineGrad)" rx="96"/>
+      </g>
+    </svg>
+    <div class="preview-label">256×256</div>
+  </div>
+
+  <div>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="128" height="128">
+      <use href="#avatar-content"/>
+    </svg>
+    <div class="preview-label">128×128</div>
+  </div>
+
+  <div>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="80" height="80">
+      <use href="#avatar-content"/>
+    </svg>
+    <div class="preview-label">80×80 (Gravatar)</div>
+  </div>
+</div>
+
+<p class="instructions">
+  Sağ tıkla → "Resmi farklı kaydet" ile PNG olarak indir<br>
+  veya aşağıdaki butona tıklayarak SVG'yi indir
+</p>
+
+<button onclick="downloadSVG()" style="
+  padding: 12px 28px;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  letter-spacing: 0.5px;
+">SVG İndir</button>
+
+<button onclick="downloadPNG()" style="
+  padding: 12px 28px;
+  background: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  letter-spacing: 0.5px;
+">PNG İndir (512×512)</button>
+
+<script>
+function downloadSVG() {
+  const svg = document.getElementById('avatar-svg');
+  const serializer = new XMLSerializer();
+  const svgStr = serializer.serializeToString(svg);
+  const blob = new Blob([svgStr], {type: 'image/svg+xml'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'udfkit-avatar.svg';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function downloadPNG() {
+  const svg = document.getElementById('avatar-svg');
+  const serializer = new XMLSerializer();
+  const svgStr = serializer.serializeToString(svg);
+  const canvas = document.createElement('canvas');
+  canvas.width = 512;
+  canvas.height = 512;
+  const ctx = canvas.getContext('2d');
+  const img = new Image();
+  const blob = new Blob([svgStr], {type: 'image/svg+xml;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  img.onload = function() {
+    ctx.drawImage(img, 0, 0, 512, 512);
+    URL.revokeObjectURL(url);
+    const pngUrl = canvas.toDataURL('image/png');
+    const a = document.createElement('a');
+    a.href = pngUrl;
+    a.download = 'udfkit-avatar.png';
+    a.click();
+  };
+  img.src = url;
+}
+</script>
+
+</body>
+</html>
