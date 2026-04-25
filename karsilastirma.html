@@ -8,6 +8,8 @@
     <meta name="keywords" content="udf vs pdf, udf pdf farki, udf dosya formati, pdf donusturme, uyap dosya formati karsilastirma, udf pdf karsilastirma">
     <meta name="robots" content="index, follow">
     <meta name="theme-color" content="#2563eb">
+    <meta name="google-site-verification" content="DQXlhI8zcKV054poHs1OgD5TbN-FSfMkcjTzW4NOLMI">
+    <meta name="yandex-verification" content="ba9a6b386e79e25a">
     <meta property="og:title" content="UDF vs PDF - Dosya Formatlari Karsilastirmasi">
     <meta property="og:description" content="UDF ve PDF arasindaki farklar. Boyut, uyumluluk, guvenlik acisindan detayli karsilastirma.">
     <meta property="og:type" content="article">
@@ -95,7 +97,7 @@
             "logo": { "@type": "ImageObject", "url": "https://convertudftopdf.com/favicon.svg" }
         },
         "datePublished": "2026-04-07",
-        "dateModified": "2026-04-18",
+        "dateModified": "2026-04-25",
         "mainEntityOfPage": { "@type": "WebPage", "@id": "https://convertudftopdf.com/karsilastirma" },
         "image": "https://convertudftopdf.com/og-image.png"
     }
@@ -136,6 +138,30 @@
                     "@type": "Answer",
                     "text": "Her iki format da guvenli ozellikler sunar. UDF, UYAP ekosistemine entegre e-imza ve erisim kontrolune sahiptir. PDF ise sifre korumasi, dijital imza, duzenleme kisitlamasi ve PDF/A arsiv standardini destekler."
                 }
+            },
+            {
+                "@type": "Question",
+                "name": "UDF vs DOCX: Hangisi daha iyi?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Kullanim amacina gore degisir. UYAP sistemine yüklenecek resmi belgeler icin UDF zorunludur; e-imza ve yargi sistemi entegrasyonu gerektirir. Duzenleme ve isbirligi acisindan DOCX ustundur. Word'de hazirlanan dilekceleri convertudftopdf.com ile UDF'e cevirip UYAP'a yukleyebilirsiniz."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "UDF ile PDF arasinda hangisi daha kucuk boyutludur?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "UDF dosyalari ZIP tabanli sikistririlmis yapilar oldugundan genellikle kucuk boyutludur. Metin agirlikli bir dilekce icin UDF 50-150 KB iken ayni belgenin PDF versiyonu 100-300 KB olabilir. Tablo ve gorseller her iki formatta da boyutu arttirir."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "UDF'yi PDF'e cevirirken veri kaybi olur mu?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "convertudftopdf.com ile UDF'den PDF'e donusturmede metin, tablolar, paragraf bicimlendirmesi ve baslik/altbilgi korunur. PKCS#7 dijital imza kriptografik olarak PDF'e tasimamaz ancak imza bilgileri (imzalayan, tarih) metinsel olarak belirtilir. Resmi islemler icin orijinal UDF'i saklayin."
+                }
             }
         ]
     }
@@ -166,7 +192,7 @@
 
     <div class="article-content">
         <h1>UDF vs PDF: Dosya Formatlari Karsilastirmasi</h1>
-        <p class="article-meta">Son guncelleme: 18 Nisan 2026 &middot; 4 dk okuma</p>
+        <p class="article-meta">Son guncelleme: 25 Nisan 2026 &middot; 8 dk okuma</p>
 
         <p>UYAP sisteminden indirdiginiz belgeler <strong>.udf</strong> formatindadir, ancak cogu zaman bu dosyalari baskalariyla paylasmak veya arsivlemek icin <strong>PDF</strong>'e cevirmeniz gerekir. Peki bu iki format arasindaki farklar nelerdir? Hangi durumlarda hangisi tercih edilmelidir?</p>
 
@@ -298,24 +324,96 @@
         <h2>Diger Format Karsilastirmalari</h2>
 
         <h3>UDF vs DOCX (Microsoft Word)</h3>
-        <p>DOCX, Microsoft Word'un dosya formatidir ve duzenleme icin idealdir. UDF dosyalari dogrudan DOCX olarak acilamaz. Duzenleme gerekiyorsa UDF'yi once PDF'e, ardindan gerekirse diger araclara DOCX'e cevirebilirsiniz.</p>
+        <p>DOCX, Microsoft Word'un Office Open XML tabanli dosya formatidir. Her iki format da zengin metin icerigi destekler, ancak kullanim amaci ve erisebilirlik acisindan temelden farklidir.</p>
+        <table class="comparison-table">
+            <thead><tr><th>Kriter</th><th>UDF</th><th>DOCX</th></tr></thead>
+            <tbody>
+                <tr><td>Acilabilen program</td><td>Sadece UYAP Editoru</td><td>Word, LibreOffice, Google Docs</td></tr>
+                <tr><td>Duzenleme kolayligi</td><td>Sinirli (UYAP agi gerekir)</td><td>Her bilgisayarda</td></tr>
+                <tr><td>Isbirligi</td><td>Yok</td><td>OneDrive, Google Drive ile</td></tr>
+                <tr><td>Mobil</td><td>Acilamaz</td><td>Word/Docs mobil ile</td></tr>
+                <tr><td>E-imza</td><td>PKCS#7 (UYAP ici)</td><td>Harici araci gerektirir</td></tr>
+                <tr><td>UYAP'a yukleme</td><td>Direkt kabul</td><td>Once UDF'e cevirmeniz gerekir</td></tr>
+            </tbody>
+        </table>
+        <p><strong>Pratik cozum:</strong> Dilekceyi Word'de yazin, <a href="word-udf-cevirme">convertudftopdf.com ile DOCX'i UDF'e cevirin</a> ve UYAP'a yukleyin. Bu is akisi, her iki formatin avantajini birlestirir.</p>
 
         <h3>UDF vs RTF (Rich Text Format)</h3>
-        <p>RTF, platformlar arasi uyumlu basit bir zengin metin formatidir. UDF dosyalari ic yapisinda RTF benzeri icerik barindirir, ancak dogrudan <code>.rtf</code> olarak acilamaz.</p>
+        <p>RTF (Rich Text Format), platformlar arasi uyumlu ve hafif bir zengin metin formatıdır. UDF dosyalari ic yapisinda aslinda RTF benzeri bloklar barindirır; ancak bu, UDF'nin dogrudan RTF olarak acilabilecegi anlamina gelmez.</p>
+        <ul>
+            <li><strong>RTF'in avantaji:</strong> Hemen her metin editoru (WordPad dahil) RTF acabilir; uyumluluk genis. UDF ise sadece UYAP ekosisteminde anlam ifade eder.</li>
+            <li><strong>UDF'nin avantaji:</strong> e-imza, yargi sistemi entegrasyonu, PKCS#7 sertifika zinciri. RTF hicbir imza altyapisina sahip degildir.</li>
+            <li><strong>Boyut:</strong> RTF sikistirma desteklemez; UDF ZIP tabanli oldugu icin genellikle daha kucuktür.</li>
+        </ul>
+        <p>UDF'i RTF'e cevirmek icin once <a href="udf-dosyasi-word-cevirme">UDF'i Word (.docx)'e donusturun</a>, sonra Word'de RTF olarak kaydedin.</p>
 
         <h3>UDF vs HTML</h3>
-        <p>HTML web sayfalari icin kullanilir. UDF dosyalarinin ic iceriginde HTML benzeri yapilar bulunabilir, ancak UDF dogrudan bir web tarayicisinda goruntulenecek sekilde tasarlanmamistir.</p>
+        <p>HTML, web sayfalari icin kullanilan bir isaretleme dilidir. UDF ile HTML arasindaki temel farklar sunlardir:</p>
+        <ul>
+            <li><strong>Amac:</strong> HTML web icerigi icin, UDF hukuki belge imzalama icin tasarlanmistir. Ikisi farkli problemleri cozer.</li>
+            <li><strong>Erisim:</strong> Her tarayici HTML gosterir; UDF icin ozel yazilim gerekir.</li>
+            <li><strong>Guvenlik:</strong> HTML dijital imzayi yapi icerisinde barindirmaz; UDF PKCS#7 e-imzayi belgenin ayrrilmaz parcasi yapar.</li>
+            <li><strong>Arsiv:</strong> HTML icerigi degistirilebilir ve zaman icinde baglantilar kopar; UDF ve PDF arşivleme icin cok daha uygun.</li>
+        </ul>
+
+        <h3>UDF vs TIFF</h3>
+        <p>TIFF (Tagged Image File Format), taranmis belgeler icin yaygin kullanilan gorsel tabanli bir formattir. Mahkeme belgelerinin pek cogi eskiden TIFF olarak arşivlenirdi.</p>
+        <ul>
+            <li><strong>TIFF:</strong> Metin aranamaz (OCR yapilmadikca), duzenleme yapılamaz, faks belgelerinde yaygin (CCITT G4 sikiştirma).</li>
+            <li><strong>UDF:</strong> Tam metin arama, duzenleme, dijital imza. Icerik yapisal XML/RTF olarak saklanir.</li>
+            <li><strong>Donusum:</strong> <a href="/">convertudftopdf.com</a> TIFF → PDF donusumunu destekler; tek sayfali veya cok sayfali TIFF'leri PDF'e cevirebilirsiniz.</li>
+        </ul>
+
+        <h2>Hangi Durumda Hangi Format?</h2>
+        <table class="comparison-table">
+            <thead><tr><th>Senaryo</th><th>Onerileni Format</th><th>Neden</th></tr></thead>
+            <tbody>
+                <tr><td>UYAP'a dilekce yuklemek</td><td>UDF</td><td>Sistem tarafindan zorunlu tutuluyor</td></tr>
+                <tr><td>Muvekkilе belge gondermek</td><td>PDF</td><td>Herkes acabilir, degistirilemez</td></tr>
+                <tr><td>Belgeyi duzenlemek</td><td>DOCX</td><td>Taninan editörler, isbirligi</td></tr>
+                <tr><td>Uzun sureli arsivleme</td><td>PDF/A</td><td>ISO standardı, bagimsiz goruntuleyici</td></tr>
+                <tr><td>Taranmis belge</td><td>TIFF → PDF</td><td>Cok sayfa, yuksek kalite tarama</td></tr>
+                <tr><td>Mobil okuma</td><td>PDF</td><td>Tum mobil cihazlarda acilir</td></tr>
+                <tr><td>Mahkeme delili (gorsel)</td><td>JPG → PDF</td><td>UYAP'a ek belge olarak yüklenir</td></tr>
+            </tbody>
+        </table>
+
+        <h2>UDF'i PDF'e Donustururken Veri Kaybi Olur mu?</h2>
+        <p>convertudftopdf.com ile UDF'den PDF'e donusturmede korunan ozellikler:</p>
+        <ul>
+            <li>Paragraf metni, yazitipi, boyut, kalın/italik/altı çizili</li>
+            <li>Tablolar (satirlar, sutunlar, hizalama)</li>
+            <li>Sayfa üst/altbilgi, sayfa numaralari</li>
+            <li>Turkce karakterler (ş, ğ, ç, ö, ü — Noto Serif fontlariyla)</li>
+        </ul>
+        <p>PDF'e aktarilamayan unsur: <strong>PKCS#7 kriptografik e-imza.</strong> Imzanin metin bilgisi (imzalayan kisi, tarih, seri no) PDF'e eklenir; ancak imzanin kriptografik dogrulamasi PDF'de mumkun degildir. Resmi islem gerektiren belgelerde orijinal UDF dosyasini saklayin.</p>
 
         <h2>Sonuc</h2>
-        <p>UDF, UYAP sistemi icinde islevsel bir formattir ve Turk yargi sisteminin dijital altyapisi icin hayati oneme sahiptir. Ancak UYAP disindaki her kullanimda — paylasim, arsivleme, mobil erisim, yazdirma — PDF acik ara en iyi secenektir. <a href="/">convertudftopdf.com</a> ile UDF dosyalarinizi saniyeler icinde PDF'e donusturerek evrensel erisebilirlik kazanabilirsiniz.</p>
+        <p>UDF, UYAP sistemi icinde islevsel ve zorunlu bir formattir; Turk yargi sisteminin dijital altyapisinin temelini olusturur. Ancak UYAP disindaki her kullanimda — paylasim, arsivleme, mobil erisim, yazdirma — PDF acik ara en iyi secenektir. <a href="/">convertudftopdf.com</a> ile UDF dosyalarinizi saniyeler icinde PDF veya Word'e donusturerek evrensel erisebilirlik kazanabilirsiniz.</p>
+
+        <h2>Sikca Sorulan Sorular</h2>
+
+        <h3>UDF vs DOCX: Hangisi daha iyi?</h3>
+        <p>Kullanim amacina gore degisir. UYAP'a yuklenecek resmi belgeler icin UDF zorunludur; e-imza ve yargi sistemi entegrasyonu gerektirir. Duzenleme ve isbirligi acisindan DOCX ustundur. En pratik cozum: Word'de yazin, <a href="word-udf-cevirme">convertudftopdf.com ile UDF'e cevirin</a>, UYAP'a yukleyin.</p>
+
+        <h3>UDF ile PDF arasinda hangisi daha kucuk boyutludur?</h3>
+        <p>UDF dosyalari ZIP tabanli sikistririlmis yapilar oldugundan genellikle kucuk boyutludur. Metin agirlikli bir dilekce icin UDF 50-150 KB, ayni belgenin PDF versiyonu 100-300 KB olabilir. Tablo ve gorsel yogunlugu her iki formatta da boyutu arttirir.</p>
+
+        <h3>UDF'yi PDF'e cevirirken imza kaybolur mu?</h3>
+        <p>PKCS#7 kriptografik imza PDF'e aktarilamaz; ancak imza bilgileri (imzalayan, tarih) metinsel olarak PDF'te belirtilir. Resmi yargi sureclerinde orijinal UDF'i saklayin; PDF kopyayi paylasim ve arsiv amacli kullanin.</p>
+
+        <h3>PDF'i UDF'e cevirmek mumkun mu?</h3>
+        <p>Dogrudan donusturme mumkun degildir; UDF kapali bir formattir ve yalnizca UYAP Dokuman Editoru uretebilir. Alternatif yol: PDF'i once Word'e, ardindan convertudftopdf.com ile UDF'e cevirin. Detay: <a href="pdf-udf-cevirme">PDF UDF Cevirme</a>.</p>
 
         <h2>Ilgili Kaynaklar</h2>
         <ul>
-            <li><a href="/udf-nedir">UDF Dosyasi Nedir? Kapsamli Rehber</a></li>
-            <li><a href="/uyap-sozluk">UYAP Terimleri Sozlugu</a></li>
-            <li><a href="/uyap-pdf-donusturucu">UYAP PDF Donusturucu Kullanim Kilavuzu</a></li>
-            <li><a href="/udf-dosyasi-acma">UDF Dosyasi Nasil Acilir?</a></li>
-            <li><a href="/udf-to-pdf">UDF to PDF Donusturme Rehberi</a></li>
+            <li><a href="udf-nedir">UDF Dosyasi Nedir? Kapsamli Rehber</a></li>
+            <li><a href="udf-to-pdf">UDF to PDF Donusturme Rehberi</a></li>
+            <li><a href="pdf-udf-cevirme">PDF UDF Cevirme</a></li>
+            <li><a href="word-udf-cevirme">Word UDF Cevirme (DOCX to UDF)</a></li>
+            <li><a href="uyap-sozluk">UYAP Terimleri Sozlugu</a></li>
+            <li><a href="uyap-pdf-donusturucu">UYAP PDF Donusturucu Kullanim Kilavuzu</a></li>
+            <li><a href="udf-dosyasi-acma">UDF Dosyasi Nasil Acilir?</a></li>
         </ul>
     </div>
 

@@ -76,6 +76,7 @@ domain:extrainfra.com
 domain:1and1-data.host
 domain:zz.com.ve
 domain:orangeblueai.com
+domain:odns.fr
 
 # IP-based injected sites
 domain:46.102.249.38
